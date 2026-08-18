@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 1 · Pricing a Product Feed</title>
+<link rel="stylesheet" href="../../assets/textbook.css">
+</head>
+<body>
+<main class="page">
+
+<header class="chapter-head">
+  <div class="chapter-eyebrow">Chapter One</div>
+  <h1>Pricing a Product Feed</h1>
+  <p class="chapter-standfirst">A supplier sends you a spreadsheet of raw product data every morning. Before any of it can go on a storefront, someone has to turn a cost, a weight, and a tax rate into a price a customer can actually be charged. That "someone" is a program — and everything a program does with data starts with values, types, and names.</p>
+</header>
+
+<h2>Why this chapter exists</h2>
+
+<p>Almost every program a working developer writes is, underneath, the same shape: take some data in, do arithmetic and rearrangement on it, produce something a human or another system can use. An invoicing service turns line items into a total. A logistics tool turns package dimensions into a shipping band. A reporting job turns yesterday's raw numbers into a summary.</p>
+
+<p>Before any of that is possible, you need three things that this chapter is entirely about:</p>
+
+<ul>
+  <li><strong>Values</strong> — the actual pieces of data: the number <code>4.99</code>, the text <code>"Blue Mug"</code>.</li>
+  <li><strong>Types</strong> — what <em>kind</em> of thing each value is, because <code>4.99</code> and <code>"4.99"</code> behave completely differently and confusing them is one of the most common real bugs in production code.</li>
+  <li><strong>Names</strong> — labels you attach to values so you can refer to them later without repeating them.</li>
+</ul>
+
+<p>The running problem for this chapter: a supplier feed gives us a product's <em>wholesale cost</em>, its <em>weight</em>, and a <em>tax rate</em>. We need to produce a retail price and a formatted line of text describing it. By the end you will be able to write that program from nothing.</p>
+
+<h2>1. Running a Python program</h2>
+
+<p>A Python program is a plain text file whose name ends in <code>.py</code>. There is nothing special about the file itself — you could write it in any editor. You will write yours in <code>micro</code>.</p>
+
+<p>To create and open a file, in your terminal:</p>
+
+<pre><code><span class="o">$</span> micro pricing.py</code></pre>
+
+<p>That opens an editor. Type your program, press <strong>Ctrl+S</strong> to save, <strong>Ctrl+Q</strong> to quit. Then <em>run</em> the file by handing it to the Python interpreter:</p>
+
+<pre><code><span class="o">$</span> python3 pricing.py</code></pre>
+
+<p>The word <code>python3</code> here is the name of a program installed on your machine — the <strong>interpreter</strong>. Its job is to read your file one line at a time, top to bottom, and carry out each instruction. <code>pricing.py</code> is the argument you are handing it: the file to read.</p>
+
+<div class="aside">
+  <span class="label">On reading top to bottom</span>
+  This "one line at a time, top to bottom" behaviour is worth taking literally. Python does not scan ahead. If line 5 uses something that only gets created on line 9, line 5 fails — even though the thing exists "somewhere in the file". Several of the errors later in this chapter are exactly this.
+</div>
+
+<h2>2. Values and the <code>print</code> function</h2>
+
+<p>A <strong>value</strong> is a single piece of data. <code>7</code> is a value. <code>"Blue Mug"</code> is a value. When Python reads your file and encounters a value, it creates that value in memory — but by default it does not show you anything. A program that consists of only the line <code>7</code> runs perfectly, produces no output, and ends.</p>
+
+<p>To actually see something, you use <code>print</code>.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p><span class="term"><code>print(...)</code></span> is a <strong>built-in function</strong> — "built-in" meaning it is always available, with no setup, in every Python program; you never have to fetch it from anywhere. Its job is to take the values you hand it, convert each to a human-readable text form, and write that text to <strong>standard output</strong> (which, when you run a program in a terminal, means: display it on the screen). It then writes a newline character, so the next <code>print</code> starts on a fresh line.</p>
+</div>
+
+<p>The parentheses <code>(</code> and <code>)</code> are how you <em>call</em> a function in Python — that is, how you actually make it run. The things you write between them are the <strong>arguments</strong>: the values you are handing to the function to work on.</p>
+
+<pre><code><span class="f">print</span>(<span class="n">7</span>)
+<span class="f">print</span>(<span class="s">"Blue Mug"</span>)</code></pre>
+<div class="out">7
+Blue Mug</div>
+
+<p>If you hand <code>print</code> more than one argument, separated by commas, it prints them all on one line with a single space between each:</p>
+
+<pre><code><span class="f">print</span>(<span class="s">"Blue Mug"</span>, <span class="n">7</span>, <span class="n">4.99</span>)</code></pre>
+<div class="out">Blue Mug 7 4.99</div>
+
+<p>Notice the quotation marks are <em>not</em> in the output. That is the point: the quotes are how you tell Python "this is text", they are not part of the text itself.</p>
+
+<h2>3. Types: what kind of thing a value is</h2>
+
+<p>Every value in Python has a <strong>type</strong>. The type determines what you are allowed to do with the value and what those operations mean. This chapter uses five.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Written</th><th>Represents</th><th>Example from the feed</th></tr></thead>
+<tbody>
+<tr><td><code>int</code></td><td><code>7</code>, <code>-3</code>, <code>0</code></td><td>A whole number, with no fractional part. Exact, and unlimited in size.</td><td>Units in stock</td></tr>
+<tr><td><code>float</code></td><td><code>4.99</code>, <code>-0.5</code>, <code>2.0</code></td><td>A number with a decimal point. Stored approximately (see §7).</td><td>Wholesale cost</td></tr>
+<tr><td><code>str</code></td><td><code>"Blue Mug"</code></td><td>Text. Short for "string" — a string of characters.</td><td>Product name</td></tr>
+<tr><td><code>bool</code></td><td><code>True</code>, <code>False</code></td><td>A truth value. Exactly two of them exist.</td><td>Is it discontinued?</td></tr>
+<tr><td><code>NoneType</code></td><td><code>None</code></td><td>The deliberate absence of a value.</td><td>A weight the supplier left blank</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Two of these need immediate comment, because both are places beginners lose hours.</p>
+
+<h4><code>2</code> and <code>2.0</code> are different values</h4>
+
+<p><code>2</code> is an <code>int</code>. <code>2.0</code> is a <code>float</code>. They represent the same quantity, and comparing them will say they are equal, but they are not the same kind of object and they do not always behave the same way. A quantity of stock is naturally an <code>int</code> — you cannot have 2.5 mugs in a warehouse. A price is naturally a <code>float</code>.</p>
+
+<h4><code>4.99</code> and <code>"4.99"</code> are entirely different things</h4>
+
+<p><code>4.99</code> is a number you can do arithmetic with. <code>"4.99"</code> is a piece of text that happens to contain digit characters, and Python will not do arithmetic with it. This distinction is the single most common source of real bugs when reading data from files, spreadsheets, or web forms — because <em>everything arriving from those sources arrives as text</em>, even when it looks like a number. §8 is about converting between them.</p>
+
+<h4>Asking Python what type something is</h4>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p><span class="term"><code>type(x)</code></span> is a built-in function that takes one value <code>x</code> and returns the type of that value. Printing the result shows it in the form <code>&lt;class 'int'&gt;</code>. It is a diagnostic tool — you use it when you are unsure what you are actually holding.</p>
+</div>
+
+<pre><code><span class="f">print</span>(<span class="f">type</span>(<span class="n">7</span>))
+<span class="f">print</span>(<span class="f">type</span>(<span class="n">4.99</span>))
+<span class="f">print</span>(<span class="f">type</span>(<span class="s">"4.99"</span>))
+<span class="f">print</span>(<span class="f">type</span>(<span class="k">True</span>))
+<span class="f">print</span>(<span class="f">type</span>(<span class="k">None</span>))</code></pre>
+<div class="out">&lt;class 'int'&gt;
+&lt;class 'float'&gt;
+&lt;class 'str'&gt;
+&lt;class 'bool'&gt;
+&lt;class 'NoneType'&gt;</div>
+
+<p>Note what happened in the third line: <code>type("4.99")</code> reports <code>str</code>, not <code>float</code>. Python does not look inside the quotes and think "ah, that's really a number". Quotes mean text, full stop.</p>
+
+<div class="aside">
+  <span class="label">The word "class"</span>
+  Python prints <code>&lt;class 'int'&gt;</code> rather than just <code>int</code> because in Python a type <em>is</em> a class — the same concept you will meet properly when you start building your own types. For now, read <code>&lt;class 'int'&gt;</code> as simply "the int type", and know the word will be explained fully later rather than assumed.
+</div>
+
+<h2>4. Names: labelling a value so you can use it again</h2>
+
+<p>Writing <code>4.99</code> into a calculation directly works, but it is unusable at scale — if that cost appears in six places and changes, you have six edits and a bug waiting in whichever one you miss. Instead you give the value a <strong>name</strong>.</p>
+
+<pre><code>wholesale_cost <span class="o">=</span> <span class="n">4.99</span></code></pre>
+
+<p>Read this from right to left, because that is the order Python does it in:</p>
+
+<ol>
+  <li>Python evaluates the thing on the right of the <code>=</code>, producing the value <code>4.99</code> in memory.</li>
+  <li>Python then makes the name <code>wholesale_cost</code> refer to that value.</li>
+</ol>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p><span class="term">Assignment</span> — the statement <code>name = value</code> — binds a name to a value. The <code>=</code> symbol is <em>not</em> the equals sign of mathematics; it does not assert that two things are equal. It is an instruction: "make this name refer to this value." (The mathematical "are these equal?" question is asked with <code>==</code>, which arrives in the next chapter.)</p>
+</div>
+
+<p>The critical mental model — and the one that prevents a whole family of confusions later — is that <strong>a name is a label attached to a value, not a box containing it</strong>. The value lives in memory; the name is a tag pointing at it.</p>
+
+<figure>
+<svg viewBox="0 0 620 190" role="img" aria-label="Diagram: the names wholesale_cost and base_price both point to a single float value 4.99 in memory">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#7a3b2e"/>
+    </marker>
+  </defs>
+  <text x="88" y="26" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" letter-spacing="1.6" fill="#7c7469">NAMES</text>
+  <text x="470" y="26" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" letter-spacing="1.6" fill="#7c7469">MEMORY</text>
+  <line x1="290" y1="12" x2="290" y2="178" stroke="#ddd5c7" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <rect x="8" y="52" width="162" height="34" rx="4" fill="#f0eee7" stroke="#ddd5c7"/>
+  <text x="89" y="74" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="12.5" fill="#1c1a17">wholesale_cost</text>
+
+  <rect x="8" y="112" width="162" height="34" rx="4" fill="#f0eee7" stroke="#ddd5c7"/>
+  <text x="89" y="134" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="12.5" fill="#1c1a17">base_price</text>
+
+  <path d="M172,69 C230,69 250,95 348,95" stroke="#7a3b2e" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M172,129 C230,129 250,101 348,101" stroke="#7a3b2e" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <rect x="358" y="72" width="224" height="52" rx="5" fill="#f7f3ea" stroke="#7a3b2e" stroke-width="1.6"/>
+  <text x="470" y="96" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="18" fill="#1c1a17">4.99</text>
+  <text x="470" y="114" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#7c7469">float object</text>
+</svg>
+<figcaption>Two names, one value. After <code>wholesale_cost = 4.99</code> and <code>base_price = wholesale_cost</code>, nothing was copied — a second label was attached to the same object.</figcaption>
+</figure>
+
+<p>Because of this, assigning one name to another does not duplicate anything:</p>
+
+<pre><code>wholesale_cost <span class="o">=</span> <span class="n">4.99</span>
+base_price <span class="o">=</span> wholesale_cost   <span class="c"># base_price now labels the SAME 4.99</span>
+
+<span class="f">print</span>(wholesale_cost, base_price)</code></pre>
+<div class="out">4.99 4.99</div>
+
+<h3>Rebinding</h3>
+
+<p>A name can be pointed at a different value later. This is called <strong>rebinding</strong>, and it does not change the original value — it moves the label.</p>
+
+<pre><code>wholesale_cost <span class="o">=</span> <span class="n">4.99</span>
+base_price     <span class="o">=</span> wholesale_cost
+wholesale_cost <span class="o">=</span> <span class="n">5.49</span>        <span class="c"># the label moves to a new object</span>
+
+<span class="f">print</span>(wholesale_cost)
+<span class="f">print</span>(base_price)</code></pre>
+<div class="out">5.49
+4.99</div>
+
+<p>This surprises people. <code>base_price</code> did not follow <code>wholesale_cost</code> to the new value, because <code>base_price</code> was never attached to <code>wholesale_cost</code> — it was attached to the <em>object</em> <code>4.99</code>, and that object did not change.</p>
+
+<div class="demo">
+  <div class="label">Step through it</div>
+  <div id="bindDemo"></div>
+  <div style="margin-top:1rem">
+    <button id="bindPrev">← Back</button>
+    <button id="bindNext">Step →</button>
+    <button id="bindReset">Reset</button>
+  </div>
+</div>
+
+<h3>Naming rules and conventions</h3>
+
+<p>The <em>rules</em> — break these and the program will not run:</p>
+<ul>
+  <li>A name may contain letters, digits, and underscores.</li>
+  <li>A name may not <em>start</em> with a digit. <code>2nd_price</code> is a syntax error.</li>
+  <li>A name may not contain spaces or hyphens. <code>wholesale cost</code> and <code>wholesale-cost</code> are both invalid (the second is read as subtraction).</li>
+  <li>Names are case-sensitive: <code>cost</code> and <code>Cost</code> are two different names.</li>
+  <li>You cannot use a word Python has reserved for itself, such as <code>if</code>, <code>for</code>, <code>class</code>, <code>None</code>, <code>True</code>.</li>
+</ul>
+
+<p>The <em>conventions</em> — break these and the program runs, but reviewers will (correctly) object:</p>
+<ul>
+  <li>Use <code>snake_case</code>: all lowercase, words separated by underscores. <code>wholesale_cost</code>, not <code>wholesaleCost</code> or <code>WholesaleCost</code>.</li>
+  <li>Names should describe the thing, not its type: <code>weight_kg</code>, not <code>float_1</code>. Where units matter, put them in the name — <code>weight_kg</code> and <code>weight_g</code> have prevented a great many real incidents.</li>
+  <li>Avoid single letters except where genuinely conventional. <code>c = 4.99</code> tells a future reader nothing.</li>
+</ul>
+
+<h2>5. Comments</h2>
+
+<p>A <code>#</code> character means "ignore the rest of this line". Python skips it entirely; it exists purely for humans.</p>
+
+<pre><code><span class="c"># Supplier feed sends cost excluding tax.</span>
+wholesale_cost <span class="o">=</span> <span class="n">4.99</span>   <span class="c"># GBP, ex-VAT</span></code></pre>
+
+<p>Good comments explain <em>why</em>, not <em>what</em>. <code># set cost to 4.99</code> is worthless — the code already says that. <code># GBP, ex-VAT</code> is valuable, because that fact appears nowhere in the code and getting it wrong produces a wrong price.</p>
+
+<h2>6. Arithmetic</h2>
+
+<p>Python's arithmetic <strong>operators</strong> — symbols that combine two values into a new one:</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operator</th><th>Name</th><th>Example</th><th>Result</th><th>Result type</th></tr></thead>
+<tbody>
+<tr><td><code>+</code></td><td>Addition</td><td><code>7 + 2</code></td><td><code>9</code></td><td><code>int</code></td></tr>
+<tr><td><code>-</code></td><td>Subtraction</td><td><code>7 - 2</code></td><td><code>5</code></td><td><code>int</code></td></tr>
+<tr><td><code>*</code></td><td>Multiplication</td><td><code>7 * 2</code></td><td><code>14</code></td><td><code>int</code></td></tr>
+<tr><td><code>/</code></td><td>True division</td><td><code>7 / 2</code></td><td><code>3.5</code></td><td><strong><code>float</code>, always</strong></td></tr>
+<tr><td><code>//</code></td><td>Floor division</td><td><code>7 // 2</code></td><td><code>3</code></td><td><code>int</code> (if both are <code>int</code>)</td></tr>
+<tr><td><code>%</code></td><td>Modulo (remainder)</td><td><code>7 % 2</code></td><td><code>1</code></td><td><code>int</code></td></tr>
+<tr><td><code>**</code></td><td>Exponentiation</td><td><code>7 ** 2</code></td><td><code>49</code></td><td><code>int</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Three of these deserve real explanation rather than a table row.</p>
+
+<h4><code>/</code> always produces a <code>float</code></h4>
+
+<p>Even when the division comes out even. <code>6 / 2</code> is <code>3.0</code>, not <code>3</code>. If you needed a whole number — say, to count something — you have quietly ended up with a float, and that will show up later as <code>3.0 items</code> in output that should have said <code>3 items</code>.</p>
+
+<h4><code>//</code> and <code>%</code> are how you divide things into whole groups</h4>
+
+<p><code>//</code> gives the whole number of times one value fits into another, discarding any remainder. <code>%</code> gives what is left over. Together they answer a question that appears constantly in real logistics and inventory code: <em>how many full boxes, and how many left over?</em></p>
+
+<pre><code>units      <span class="o">=</span> <span class="n">47</span>
+box_size   <span class="o">=</span> <span class="n">12</span>
+
+full_boxes <span class="o">=</span> units <span class="o">//</span> box_size
+leftover   <span class="o">=</span> units <span class="o">%</span>  box_size
+
+<span class="f">print</span>(full_boxes, leftover)</code></pre>
+<div class="out">3 11</div>
+
+<p>Three full boxes of twelve is 36 units, leaving 11. Note <code>//</code> discards the remainder rather than rounding: <code>47 // 12</code> is <code>3</code>, even though <code>47 / 12</code> is about <code>3.92</code>.</p>
+
+<h4>Order of operations</h4>
+
+<p>Python follows standard mathematical precedence: <code>**</code> first, then <code>*</code>, <code>/</code>, <code>//</code>, <code>%</code>, then <code>+</code> and <code>-</code>. Equal precedence evaluates left to right. Parentheses override everything.</p>
+
+<pre><code><span class="f">print</span>(<span class="n">4.99</span> <span class="o">+</span> <span class="n">4.99</span> <span class="o">*</span> <span class="n">0.20</span>)      <span class="c"># tax on the cost, then added</span>
+<span class="f">print</span>((<span class="n">4.99</span> <span class="o">+</span> <span class="n">4.99</span>) <span class="o">*</span> <span class="n">0.20</span>)    <span class="c"># tax on double the cost — different thing</span></code></pre>
+<div class="out">5.988
+1.996</div>
+
+<p>Use parentheses whenever the grouping is not instantly obvious to a reader, even where they are technically unnecessary. Being right is not enough; being unambiguously right matters in code others maintain.</p>
+
+<h4>Augmented assignment</h4>
+
+<p><code>total = total + 5</code> — take the current value of <code>total</code>, add 5, rebind <code>total</code> to the result — is common enough to have a shorthand:</p>
+
+<pre><code>total <span class="o">=</span> <span class="n">10.0</span>
+total <span class="o">+=</span> <span class="n">5.0</span>     <span class="c"># same as: total = total + 5.0</span>
+total <span class="o">*=</span> <span class="n">2</span>       <span class="c"># same as: total = total * 2</span>
+<span class="f">print</span>(total)</code></pre>
+<div class="out">30.0</div>
+
+<p>The forms <code>-=</code>, <code>/=</code>, <code>//=</code>, <code>%=</code>, <code>**=</code> all exist and work the same way.</p>
+
+<h2>7. The float problem you will otherwise hit blind</h2>
+
+<p>Run this:</p>
+
+<pre><code><span class="f">print</span>(<span class="n">0.1</span> <span class="o">+</span> <span class="n">0.2</span>)</code></pre>
+<div class="out">0.30000000000000004</div>
+
+<p>This is not a bug in Python, and it is not something you can configure away. A <code>float</code> is stored in <strong>binary</strong>, and just as <sup>1</sup>⁄<sub>3</sub> cannot be written exactly in decimal (0.333… forever), values like 0.1 cannot be written exactly in binary. What gets stored is the closest representable value, and the tiny errors accumulate.</p>
+
+<p>The consequence for the kind of code in this chapter: <strong>never trust a raw float for a displayed price.</strong> A computed total of <code>17.850000000000001</code> must not reach a customer. You control this with rounding and formatting, both covered next.</p>
+
+<div class="aside warn">
+  <span class="label">Deferred, deliberately</span>
+  Real financial systems generally do not use <code>float</code> for money at all — they use Python's <code>decimal.Decimal</code> type, which stores decimal digits exactly, or store amounts as integer counts of pennies. Both are the correct professional answer and both are taught later, once modules and integer arithmetic patterns are properly established. For now, <code>float</code> plus disciplined rounding is what you have, and knowing <em>why</em> it is a compromise is the point of this section.
+</div>
+
+<h2>8. Converting between types</h2>
+
+<p>Data arriving from the outside world — a file, a form, a supplier feed — arrives as text. Converting it is a daily task.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p><span class="term"><code>int(x)</code></span>, <span class="term"><code>float(x)</code></span>, <span class="term"><code>str(x)</code></span> are built-in functions that each take a value and <strong>return a new value of that type</strong>. They do not modify <code>x</code> — nothing in Python modifies a number or a string in place. You must use the returned value, usually by assigning it to a name.</p>
+</div>
+
+<pre><code>raw_cost <span class="o">=</span> <span class="s">"4.99"</span>          <span class="c"># as it arrived from the feed: text</span>
+cost     <span class="o">=</span> <span class="f">float</span>(raw_cost)  <span class="c"># now a number we can compute with</span>
+
+<span class="f">print</span>(<span class="f">type</span>(raw_cost), <span class="f">type</span>(cost))
+<span class="f">print</span>(cost <span class="o">*</span> <span class="n">2</span>)</code></pre>
+<div class="out">&lt;class 'str'&gt; &lt;class 'float'&gt;
+9.98</div>
+
+<p>The behaviours worth knowing before they bite:</p>
+
+<ul>
+  <li><code>int("7")</code> → <code>7</code>. But <code>int("7.5")</code> <strong>fails</strong> with a <code>ValueError</code> — <code>int</code> will not silently discard a fractional part from text. Convert to <code>float</code> first, then to <code>int</code>.</li>
+  <li><code>int(7.9)</code> → <code>7</code>. Converting a <em>float</em> to <code>int</code> truncates toward zero; it does not round. <code>int(-7.9)</code> → <code>-7</code>.</li>
+  <li><code>float("4.99")</code> → <code>4.99</code>. <code>float("abc")</code> → <code>ValueError</code>.</li>
+  <li><code>str(4.99)</code> → <code>"4.99"</code>. This always works, for any value.</li>
+</ul>
+
+<h4>Rounding properly</h4>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p><span class="term"><code>round(x, n)</code></span> is a built-in function taking a number <code>x</code> and an optional number of decimal places <code>n</code>, returning a new number rounded to that many places. With <code>n</code> omitted it rounds to a whole number and returns an <code>int</code>. With <code>n</code> given it returns a <code>float</code>.</p>
+</div>
+
+<pre><code><span class="f">print</span>(<span class="f">round</span>(<span class="n">17.856</span>, <span class="n">2</span>))
+<span class="f">print</span>(<span class="f">round</span>(<span class="n">17.856</span>))
+<span class="f">print</span>(<span class="f">round</span>(<span class="n">2.5</span>))
+<span class="f">print</span>(<span class="f">round</span>(<span class="n">3.5</span>))</code></pre>
+<div class="out">17.86
+18
+2
+4</div>
+
+<p>Those last two are not typos. Python uses <strong>banker's rounding</strong>: an exact half rounds to the nearest <em>even</em> number, so 2.5 → 2 and 3.5 → 4. This exists because always rounding halves upward introduces a systematic upward bias across many values — a genuine problem in financial and statistical work. It is standard, correct, and surprising the first time.</p>
+
+<h2>9. Strings and building output</h2>
+
+<p>A <code>str</code> is written between single quotes <code>'…'</code> or double quotes <code>"…"</code> — Python treats them identically. Pick one and be consistent; use the other when the text itself contains a quote:</p>
+
+<pre><code>note <span class="o">=</span> <span class="s">"Supplier's reference"</span>   <span class="c"># apostrophe inside, so use double quotes</span></code></pre>
+
+<h4>Concatenation</h4>
+
+<p><code>+</code> between two strings joins them. Between a string and a number it raises <code>TypeError</code> — Python refuses to guess what you meant:</p>
+
+<pre><code>name <span class="o">=</span> <span class="s">"Blue Mug"</span>
+<span class="f">print</span>(<span class="s">"Product: "</span> <span class="o">+</span> name)
+<span class="f">print</span>(<span class="s">"Cost: "</span> <span class="o">+</span> <span class="n">4.99</span>)     <span class="c"># TypeError</span></code></pre>
+<div class="out">Product: Blue Mug
+TypeError: can only concatenate str (not "float") to str</div>
+
+<p>You could fix that with <code>str(4.99)</code>. Don't — there is a far better tool.</p>
+
+<h4>f-strings</h4>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>An <span class="term">f-string</span> is a string literal prefixed with the letter <code>f</code>, in which any expression written between braces <code>{</code> and <code>}</code> is evaluated and its result inserted into the text. It is the standard, idiomatic way to build text from values in modern Python.</p>
+</div>
+
+<pre><code>name <span class="o">=</span> <span class="s">"Blue Mug"</span>
+cost <span class="o">=</span> <span class="n">4.99</span>
+qty  <span class="o">=</span> <span class="n">3</span>
+
+<span class="f">print</span>(<span class="s">f"</span>{name}<span class="s"> x</span>{qty}<span class="s"> at £</span>{cost}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Line total: £</span>{cost <span class="o">*</span> qty}<span class="s">"</span>)</code></pre>
+<div class="out">Blue Mug x3 at £4.99
+Line total: £14.969999999999999</div>
+
+<p>Note two things. First, no <code>str()</code> conversion was needed — the f-string handles it. Second, arbitrary expressions work inside the braces, not just names: <code>{cost * qty}</code> did real arithmetic. And third — the float problem from §7 arrived exactly as promised.</p>
+
+<h4>Format specifiers: fixing that output</h4>
+
+<p>Inside the braces you may add a colon followed by a <strong>format specifier</strong> controlling how the value is rendered:</p>
+
+<pre><code>cost <span class="o">=</span> <span class="n">4.99</span>
+qty  <span class="o">=</span> <span class="n">3</span>
+
+<span class="f">print</span>(<span class="s">f"Line total: £</span>{cost <span class="o">*</span> qty<span class="o">:</span>.2f}<span class="s">"</span>)</code></pre>
+<div class="out">Line total: £14.97</div>
+
+<p>The specifier <code>.2f</code> means: render as a <strong>f</strong>ixed-point decimal with exactly <strong>2</strong> places. Crucially it rounds for display <em>and always shows both places</em> — so <code>5.0</code> renders as <code>5.00</code>, which <code>round(5.0, 2)</code> would not give you.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Specifier</th><th>Meaning</th><th>Input</th><th>Output</th></tr></thead>
+<tbody>
+<tr><td><code>.2f</code></td><td>Fixed-point, 2 decimals</td><td><code>14.969…</code></td><td><code>14.97</code></td></tr>
+<tr><td><code>.0f</code></td><td>Fixed-point, no decimals</td><td><code>14.97</code></td><td><code>15</code></td></tr>
+<tr><td><code>,</code></td><td>Thousands separators</td><td><code>1250000</code></td><td><code>1,250,000</code></td></tr>
+<tr><td><code>,.2f</code></td><td>Both combined</td><td><code>1250.5</code></td><td><code>1,250.50</code></td></tr>
+<tr><td><code>&gt;10</code></td><td>Right-align in 10 characters</td><td><code>"Mug"</code></td><td><code>"·······Mug"</code></td></tr>
+<tr><td><code>&lt;10</code></td><td>Left-align in 10 characters</td><td><code>"Mug"</code></td><td><code>"Mug·······"</code></td></tr>
+<tr><td><code>.1%</code></td><td>As a percentage, 1 decimal</td><td><code>0.205</code></td><td><code>20.5%</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>(The <code>·</code> above represents a space; it is not printed.) Alignment specifiers are what let you produce column-aligned reports without counting spaces by hand — you will use them in the exercises.</p>
+
+<div class="aside">
+  <span class="label">Rounding vs. formatting</span>
+  These are different operations and confusing them causes real bugs. <code>round()</code> changes the <em>value</em> — the number stored is now different. A format specifier changes only the <em>display</em> — the underlying value is untouched. Rule of thumb: format at the moment of display; round only when the rounded number is genuinely the value you want to keep computing with.
+</div>
+
+<h2>10. Reading errors</h2>
+
+<p>Programs fail. Being able to read the failure is a skill, not an inconvenience, and it is worth learning now rather than by accumulated frustration.</p>
+
+<pre><code>cost <span class="o">=</span> <span class="n">4.99</span>
+<span class="f">print</span>(<span class="s">"Total: "</span> <span class="o">+</span> cost)</code></pre>
+<div class="out">Traceback (most recent call last):
+  File "/home/mike/pricing.py", line 2, in &lt;module&gt;
+    print("Total: " + cost)
+                      ~~~~~~~~~~~^~~~~~
+TypeError: can only concatenate str (not "float") to str</div>
+
+<p>Read it bottom-up — <strong>the last line is the actual error</strong>:</p>
+<ul>
+  <li><code>TypeError</code> — the category: an operation got a type it cannot work with.</li>
+  <li>The message after the colon says precisely what went wrong.</li>
+  <li>The <code>File …, line 2</code> line tells you exactly where.</li>
+</ul>
+
+<p>The three you will meet most this chapter:</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Error</th><th>Means</th><th>Typical cause</th></tr></thead>
+<tbody>
+<tr><td><code>NameError</code></td><td>A name was used that Python does not know</td><td>Typo, or using a name before the line that assigns it</td></tr>
+<tr><td><code>TypeError</code></td><td>An operation was given the wrong type</td><td><code>"text" + 4.99</code></td></tr>
+<tr><td><code>ValueError</code></td><td>Right type, but an unusable value</td><td><code>int("abc")</code>, <code>float("")</code></td></tr>
+<tr><td><code>SyntaxError</code></td><td>Not valid Python at all</td><td>Unclosed bracket or quote — check the line <em>above</em> the reported one</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Worked examples</h2>
+
+<div class="example">
+<div class="label">Example 1</div>
+<h3>A single retail price</h3>
+
+<p><strong>The problem.</strong> The feed gives a wholesale cost of £4.99. Company policy is a 60% markup, then 20% VAT on the marked-up price. Produce the customer-facing price.</p>
+
+<p><strong>Thinking it through before typing.</strong> Two sequential percentage operations. "60% markup" means the retail-ex-VAT price is the cost plus 60% of the cost — that is <code>cost * 1.60</code>. Then VAT adds 20% on top of <em>that</em>, not on the original cost: <code>* 1.20</code>. Getting that order wrong is the classic error, and it produces a plausible-looking but wrong number, which is the worst kind.</p>
+
+<p>Each percentage is a multiplier: 60% markup → ×1.60, 20% VAT → ×1.20. Naming the rates rather than writing <code>1.60</code> inline matters, because a policy change should be a one-line edit.</p>
+
+<pre><code><span class="c"># Retail pricing for a single supplier line.</span>
+<span class="c"># Feed sends cost in GBP, excluding VAT.</span>
+
+wholesale_cost <span class="o">=</span> <span class="n">4.99</span>
+markup_rate    <span class="o">=</span> <span class="n">0.60</span>   <span class="c"># 60% margin over cost</span>
+vat_rate       <span class="o">=</span> <span class="n">0.20</span>   <span class="c"># UK standard rate</span>
+
+price_ex_vat <span class="o">=</span> wholesale_cost <span class="o">*</span> (<span class="n">1</span> <span class="o">+</span> markup_rate)
+price_inc_vat <span class="o">=</span> price_ex_vat <span class="o">*</span> (<span class="n">1</span> <span class="o">+</span> vat_rate)
+
+<span class="f">print</span>(<span class="s">f"Cost:      £</span>{wholesale_cost<span class="o">:</span>.2f}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Ex VAT:    £</span>{price_ex_vat<span class="o">:</span>.2f}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Inc VAT:   £</span>{price_inc_vat<span class="o">:</span>.2f}<span class="s">"</span>)</code></pre>
+<div class="out">Cost:      £4.99
+Ex VAT:    £7.98
+Inc VAT:   £9.58</div>
+
+<p><strong>Why <code>(1 + markup_rate)</code> and not <code>1.60</code>?</strong> Because the name <code>markup_rate = 0.60</code> reads as "60 percent", which is how the policy is actually written down. Writing <code>1.60</code> forces a future reader to reverse-engineer that the 1 is "the original" and the 0.60 is "the markup". Both compute the same number; one of them communicates.</p>
+
+<p><strong>Why format with <code>:.2f</code> rather than <code>round()</code>?</strong> The true value of <code>price_inc_vat</code> is 9.58080000000000, and we want the full precision retained in the variable in case anything downstream uses it — but a customer must see <code>£9.58</code>. Formatting at the point of display does exactly that.</p>
+</div>
+
+<div class="example">
+<div class="label">Example 2</div>
+<h3>Shipping bands from a raw feed</h3>
+
+<p><strong>The problem.</strong> The feed sends weight as text in grams, e.g. <code>"1850"</code>. The warehouse packs in cartons holding 4 units. Given an order of 47 units, report: total shipment weight in kilograms, how many full cartons, and how many units are left over.</p>
+
+<p><strong>Thinking it through.</strong> Three separate concerns, and each has a trap. The weight arrives as <code>str</code>, so arithmetic on it will fail until converted — that is §8. Grams to kilograms is a division by 1000, which will produce a <code>float</code> (§6). "Full cartons and leftover" is precisely the <code>//</code> and <code>%</code> pair from §6, and using <code>/</code> here would give <code>11.75</code> cartons, which is not a thing that exists in a warehouse.</p>
+
+<pre><code><span class="c"># Warehouse dispatch summary for one order line.</span>
+
+raw_weight_g <span class="o">=</span> <span class="s">"1850"</span>   <span class="c"># arrives from the feed as text</span>
+units        <span class="o">=</span> <span class="n">47</span>
+carton_size  <span class="o">=</span> <span class="n">4</span>
+
+unit_weight_g  <span class="o">=</span> <span class="f">int</span>(raw_weight_g)
+total_weight_g <span class="o">=</span> unit_weight_g <span class="o">*</span> units
+total_weight_kg <span class="o">=</span> total_weight_g <span class="o">/</span> <span class="n">1000</span>
+
+full_cartons <span class="o">=</span> units <span class="o">//</span> carton_size
+loose_units  <span class="o">=</span> units <span class="o">%</span>  carton_size
+
+<span class="f">print</span>(<span class="s">f"Units:        </span>{units}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Total weight: </span>{total_weight_kg<span class="o">:</span>,.2f}<span class="s"> kg"</span>)
+<span class="f">print</span>(<span class="s">f"Full cartons: </span>{full_cartons}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Loose units:  </span>{loose_units}<span class="s">"</span>)</code></pre>
+<div class="out">Units:        47
+Total weight: 86.95 kg
+Full cartons: 11
+Loose units:  3</div>
+
+<p><strong>Why <code>int()</code> and not <code>float()</code> for the weight?</strong> Because grams from this supplier are always whole numbers — the type should express what the data actually is. If the feed could send <code>"1850.5"</code>, <code>int()</code> would raise <code>ValueError</code> and <code>float()</code> would be correct. Choosing deliberately, rather than reaching for whichever works, is the habit being built here.</p>
+
+<p><strong>Why <code>,.2f</code> on the weight?</strong> The comma adds thousands separators. At 86.95 kg it changes nothing — but this same line will one day run on an order of 40,000 units, and <code>34,225.00 kg</code> is readable where <code>34225.0</code> is not. Formatting for the data you will eventually have, not just today's sample, costs nothing here.</p>
+</div>
+
+<div class="example">
+<div class="label">Example 3 · integrating</div>
+<h3>A formatted margin report line</h3>
+
+<p><strong>The problem.</strong> Produce one aligned line of a report for a product, showing name, quantity, unit price, line total, and the profit margin as a percentage — from raw feed values, some of which are text.</p>
+
+<p><strong>Thinking it through.</strong> This pulls in everything: conversion (§8), arithmetic including a division that must not be integer division (§6), the float trap (§7), f-strings with alignment and percentage specifiers (§9). The one genuinely new piece of reasoning is the margin itself.</p>
+
+<p>Margin is profit as a proportion <em>of the selling price</em> — <code>(price - cost) / price</code> — not of the cost. That second version is markup, a different number, and confusing the two is a real and expensive mistake in retail. At a cost of £4.99 and a price of £9.58, margin is about 48% while markup is about 92%. Both are "the profit", and only one answers the question asked.</p>
+
+<pre><code><span class="c"># One line of the daily margin report.</span>
+
+name         <span class="o">=</span> <span class="s">"Blue Mug"</span>
+raw_cost     <span class="o">=</span> <span class="s">"4.99"</span>      <span class="c"># text, from the feed</span>
+raw_qty      <span class="o">=</span> <span class="s">"3"</span>         <span class="c"># text, from the feed</span>
+retail_price <span class="o">=</span> <span class="n">9.58</span>
+
+cost  <span class="o">=</span> <span class="f">float</span>(raw_cost)
+qty   <span class="o">=</span> <span class="f">int</span>(raw_qty)
+
+line_total   <span class="o">=</span> retail_price <span class="o">*</span> qty
+profit_each  <span class="o">=</span> retail_price <span class="o">-</span> cost
+margin       <span class="o">=</span> profit_each <span class="o">/</span> retail_price   <span class="c"># of PRICE, not of cost</span>
+
+<span class="f">print</span>(<span class="s">f"</span>{name<span class="o">:</span>&lt;14}{qty<span class="o">:</span>&gt;4}{retail_price<span class="o">:</span>&gt;10.2f}{line_total<span class="o">:</span>&gt;10.2f}{margin<span class="o">:</span>&gt;9.1%}<span class="s">"</span>)</code></pre>
+<div class="out">Blue Mug         3      9.58     28.74    47.9%</div>
+
+<p><strong>Reading that final f-string carefully</strong>, because it is dense and every part is doing work:</p>
+<ul>
+  <li><code>{name:&lt;14}</code> — left-align the name in a 14-character column. Left for text, because ragged-right text is what the eye expects.</li>
+  <li><code>{qty:&gt;4}</code> — right-align the quantity in 4 characters. Right for numbers, so digits line up by place value.</li>
+  <li><code>{retail_price:&gt;10.2f}</code> — two specifiers combined: right-align in 10 characters, <em>and</em> render as fixed-point with 2 decimals.</li>
+  <li><code>{margin:&gt;9.1%}</code> — the <code>%</code> multiplies by 100 and appends the sign, so <code>0.4791…</code> becomes <code>47.9%</code>. Doing the ×100 by hand and appending <code>"%"</code> manually would be more code and easier to get wrong.</li>
+</ul>
+
+<p><strong>Why no separators between the braces?</strong> Because the width specifiers already create the spacing. Adding spaces as well would double-space the columns and break the alignment you just asked for.</p>
+</div>
+
+<h2>What this chapter established</h2>
+
+<ul>
+  <li>A program is a <code>.py</code> file read top to bottom by the <code>python3</code> interpreter.</li>
+  <li><code>print()</code> writes values to standard output; <code>type()</code> tells you what a value is.</li>
+  <li>Five types: <code>int</code>, <code>float</code>, <code>str</code>, <code>bool</code>, <code>NoneType</code> — and <code>4.99</code> is not <code>"4.99"</code>.</li>
+  <li>A name is a label bound to a value, not a container; rebinding moves the label.</li>
+  <li>Arithmetic operators, with <code>/</code> always producing a float and <code>//</code>/<code>%</code> answering "how many whole, how many left".</li>
+  <li>Floats are approximate; round or format before anything reaches a human.</li>
+  <li><code>int()</code>, <code>float()</code>, <code>str()</code>, <code>round()</code> convert; f-strings with format specifiers display.</li>
+  <li>Tracebacks are read bottom-up.</li>
+</ul>
+
+<p>Everything the exercise set requires is above. If something in the exercises appears to need a tool that was not taught here, that is a syllabus gap — check <code>syllabus_map.md</code>, and flag it rather than assuming the fault is yours.</p>
+
+<nav class="chapter-foot">
+  <a href="../../index.html" class="prv"><span class="dir">Back to</span>Contents</a>
+  <a href="exercises.md" class="nxt"><span class="dir">Next</span>Exercises →</a>
+</nav>
+
+</main>
+
+<script>
+(function () {
+  const steps = [
+    { code: 0, names: {}, objs: [], note: "Nothing exists yet. The program has not run a line." },
+    { code: 1, names: { wholesale_cost: 0 }, objs: [4.99],
+      note: "Line 1 runs. Python creates the float 4.99 in memory, then binds the name wholesale_cost to it." },
+    { code: 2, names: { wholesale_cost: 0, base_price: 0 }, objs: [4.99],
+      note: "Line 2 runs. base_price is bound to the value wholesale_cost currently refers to — the SAME object. Nothing was copied." },
+    { code: 3, names: { wholesale_cost: 1, base_price: 0 }, objs: [4.99, 5.49],
+      note: "Line 3 runs. A new float 5.49 is created and wholesale_cost is rebound to it. The old 4.99 is untouched — and base_price still labels it." }
+  ];
+  const lines = [
+    "wholesale_cost = 4.99",
+    "base_price     = wholesale_cost",
+    "wholesale_cost = 5.49"
+  ];
+  let i = 0;
+  const host  = document.getElementById("bindDemo");
+  const bNext = document.getElementById("bindNext");
+  const bPrev = document.getElementById("bindPrev");
+  const bRst  = document.getElementById("bindReset");
+
+  function render() {
+    const s = steps[i];
+    let code = "";
+    lines.forEach((ln, n) => {
+      const done = n < s.code;
+      const cur  = n === s.code - 1;
+      code += '<div style="padding:2px 8px;border-radius:3px;'
+            + (cur ? 'background:#7a3b2e;color:#fbf9f5;' : done ? 'color:#8d867a;' : 'color:#c2bbb0;')
+            + '">' + ln + '</div>';
+    });
+
+    let objHtml = "";
+    s.objs.forEach((v, n) => {
+      const labels = Object.keys(s.names).filter(k => s.names[k] === n);
+      objHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+              + '<div style="min-width:150px;text-align:right;font-size:12px;color:#7a3b2e">'
+              + (labels.length ? labels.join(" , ") : '<span style="color:#c2bbb0">(no name)</span>')
+              + '</div><div style="color:#a8705f">&#8594;</div>'
+              + '<div style="border:1.5px solid ' + (labels.length ? '#7a3b2e' : '#ddd5c7')
+              + ';background:#f7f3ea;border-radius:4px;padding:5px 16px;font-size:15px">' + v.toFixed(2) + '</div>'
+              + '</div>';
+    });
+    if (!s.objs.length) objHtml = '<div style="color:#c2bbb0;font-size:13px">memory is empty</div>';
+
+    host.innerHTML =
+      '<div style="font-family:JetBrains Mono,monospace;font-size:12.5px;line-height:1.9;margin-bottom:16px">' + code + '</div>'
+      + '<div style="font-family:JetBrains Mono,monospace;margin-bottom:14px">' + objHtml + '</div>'
+      + '<div style="font-family:Inter,sans-serif;font-size:13px;line-height:1.55;color:#4a453e;border-top:1px solid #ddd5c7;padding-top:11px">'
+      + s.note + '</div>';
+
+    bPrev.disabled = i === 0;
+    bNext.disabled = i === steps.length - 1;
+  }
+
+  bNext.onclick = () => { if (i < steps.length - 1) { i++; render(); } };
+  bPrev.onclick = () => { if (i > 0) { i--; render(); } };
+  bRst.onclick  = () => { i = 0; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

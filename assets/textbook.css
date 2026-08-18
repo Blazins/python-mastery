@@ -1,0 +1,321 @@
+/* ── Python Mastery — shared textbook styling ─────────────────────────── */
+
+:root {
+  --ink:        #1c1a17;
+  --ink-soft:   #4a453e;
+  --ink-faint:  #7c7469;
+  --paper:      #fbf9f5;
+  --paper-warm: #f4efe6;
+  --rule:       #ddd5c7;
+  --accent:     #7a3b2e;   /* oxblood — chapter numerals, links */
+  --accent-dim: #a8705f;
+  --code-bg:    #f2ede3;
+  --def-bg:     #f0eee7;
+  --ex-bg:      #f7f3ea;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --sans:  "Inter", "Helvetica Neue", Arial, sans-serif;
+  --mono:  "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 4.5rem 1.6rem 8rem;
+}
+
+/* ── Chapter header ─────────────────────────────────────────────────── */
+
+.chapter-head { margin-bottom: 3.5rem; }
+
+.chapter-eyebrow {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 1.1rem;
+}
+
+.chapter-head h1 {
+  font-size: 2.6rem;
+  line-height: 1.18;
+  font-weight: 600;
+  margin: 0 0 1.1rem;
+  letter-spacing: -0.015em;
+}
+
+.chapter-standfirst {
+  font-size: 1.12rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin: 0;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid var(--rule);
+}
+
+/* ── Structure ──────────────────────────────────────────────────────── */
+
+h2 {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 3.6rem 0 1.2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+h3 {
+  font-size: 1.32rem;
+  font-weight: 600;
+  margin: 2.6rem 0 0.9rem;
+  letter-spacing: -0.01em;
+}
+
+h4 {
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 650;
+  margin: 1.9rem 0 0.7rem;
+  color: var(--ink-soft);
+}
+
+p { margin: 0 0 1.25rem; }
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--accent-dim); }
+
+strong { font-weight: 650; }
+
+ul, ol { margin: 0 0 1.35rem; padding-left: 1.5rem; }
+li { margin-bottom: 0.55rem; }
+
+/* ── Code ───────────────────────────────────────────────────────────── */
+
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.36em;
+  border-radius: 3px;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+pre {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.62;
+  background: #26231f;
+  color: #e8e2d6;
+  padding: 1.25rem 1.4rem;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 0 0 1.4rem;
+  tab-size: 4;
+}
+pre code { background: none; border: none; padding: 0; font-size: inherit; color: inherit; }
+
+/* syntax tokens */
+.k  { color: #d98c6a; }   /* keyword   */
+.s  { color: #9fc08a; }   /* string    */
+.n  { color: #d9c470; }   /* number    */
+.c  { color: #7d766b; font-style: italic; }  /* comment */
+.f  { color: #86b5cc; }   /* builtin/function */
+.o  { color: #c9c2b6; }   /* operator  */
+
+.out {
+  background: var(--paper-warm);
+  border-left: 3px solid var(--ink-faint);
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  padding: 0.85rem 1.1rem;
+  margin: -0.6rem 0 1.5rem;
+  white-space: pre-wrap;
+  border-radius: 0 4px 4px 0;
+}
+.out::before {
+  content: "output";
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.45rem;
+}
+
+/* ── Blocks ─────────────────────────────────────────────────────────── */
+
+.definition {
+  background: var(--def-bg);
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--accent);
+  padding: 1.3rem 1.5rem 0.6rem;
+  margin: 2rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.definition .label {
+  font-family: var(--sans);
+  font-size: 0.65rem;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 650;
+  margin-bottom: 0.6rem;
+}
+.definition .term { font-weight: 650; }
+
+.example {
+  background: var(--ex-bg);
+  border: 1px solid var(--rule);
+  padding: 1.6rem 1.7rem 0.7rem;
+  margin: 2.6rem 0;
+  border-radius: 5px;
+}
+.example > .label {
+  font-family: var(--sans);
+  font-size: 0.65rem;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 650;
+  margin-bottom: 0.5rem;
+}
+.example > h3 { margin-top: 0; }
+
+.aside {
+  border-left: 3px solid var(--rule);
+  padding: 0.2rem 0 0.2rem 1.3rem;
+  margin: 1.9rem 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.aside .label {
+  font-family: var(--sans);
+  font-size: 0.63rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 650;
+  color: var(--ink-faint);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.warn { border-left-color: var(--accent); }
+.warn .label { color: var(--accent); }
+
+/* ── Figures & diagrams ─────────────────────────────────────────────── */
+
+figure {
+  margin: 2.6rem 0;
+  text-align: center;
+}
+figure svg { max-width: 100%; height: auto; }
+figcaption {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  margin-top: 0.9rem;
+  line-height: 1.5;
+}
+
+.demo {
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 1.4rem;
+  margin: 2.6rem 0;
+}
+.demo .label {
+  font-family: var(--sans);
+  font-size: 0.65rem;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 650;
+  margin-bottom: 1rem;
+}
+.demo button {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 550;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0 0.4rem 0.4rem 0;
+}
+.demo button:hover { background: var(--accent); }
+.demo button:disabled { background: var(--ink-faint); cursor: default; }
+
+/* ── Tables ─────────────────────────────────────────────────────────── */
+
+.table-wrap { overflow-x: auto; margin: 0 0 1.6rem; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+}
+th, td {
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+th {
+  font-weight: 650;
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border-bottom: 2px solid var(--rule);
+}
+td code { font-size: 0.85em; }
+
+/* ── Footer nav ─────────────────────────────────────────────────────── */
+
+.chapter-foot {
+  margin-top: 5rem;
+  padding-top: 1.6rem;
+  border-top: 2px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+}
+.chapter-foot a { text-decoration: none; }
+.chapter-foot .nxt { text-align: right; }
+.chapter-foot .dir {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.2rem;
+}
+
+@media (max-width: 620px) {
+  body { font-size: 17.5px; }
+  .page { padding: 3rem 1.15rem 5rem; }
+  .chapter-head h1 { font-size: 2rem; }
+}

@@ -1,0 +1,13 @@
+# Environment
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Personal — stays local, never published.
+# Learning records, candid feedback, and the platform's own instructions
+# are working material, not portfolio material.
+CLAUDE.md
+weak_spots.md
+progress_log.md
+syllabus/*/review.md

@@ -1,0 +1,47 @@
+name: Grade submissions
+
+# Runs the objective half of grading automatically on every pull request.
+# The qualitative review happens in the PR conversation afterwards.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    name: pytest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install pytest
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+
+      - name: Run the grading suite
+        id: grade
+        run: |
+          set -o pipefail
+          python -m pytest --tb=short -rs --color=yes 2>&1 | tee result.txt
+
+      - name: Write summary
+        if: always()
+        run: |
+          {
+            echo "## Grading result"
+            echo ""
+            echo '```'
+            tail -40 result.txt 2>/dev/null || echo "no output captured"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

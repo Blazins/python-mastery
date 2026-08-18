@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Mastery — Contents</title>
+<link rel="stylesheet" href="assets/textbook.css">
+<style>
+  .toc { list-style: none; padding: 0; margin: 2.5rem 0 0; }
+  .toc li { margin: 0; border-bottom: 1px solid var(--rule); }
+  .toc li:first-child { border-top: 1px solid var(--rule); }
+  .toc a {
+    display: flex; align-items: baseline; gap: 1.2rem;
+    padding: 1.15rem 0.4rem; text-decoration: none; color: var(--ink);
+  }
+  .toc a:hover { background: var(--paper-warm); color: var(--ink); }
+  .toc .num {
+    font-family: var(--mono); font-size: 0.78rem; color: var(--accent);
+    min-width: 2.2rem; letter-spacing: 0.05em;
+  }
+  .toc .body { flex: 1; }
+  .toc .ttl { font-size: 1.12rem; font-weight: 600; display: block; margin-bottom: 0.18rem; }
+  .toc .sub { font-size: 0.9rem; color: var(--ink-soft); display: block; line-height: 1.5; }
+  .toc .teaches {
+    font-family: var(--sans); font-size: 0.7rem; letter-spacing: 0.06em;
+    color: var(--ink-faint); display: block; margin-top: 0.42rem;
+  }
+  .toc li.pending a { cursor: default; }
+  .toc li.pending .ttl, .toc li.pending .sub { color: var(--ink-faint); }
+  .toc li.pending .num { color: var(--ink-faint); }
+  .status {
+    font-family: var(--sans); font-size: 0.62rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink-faint);
+    border: 1px solid var(--rule); border-radius: 3px;
+    padding: 0.18rem 0.45rem; align-self: center; white-space: nowrap;
+  }
+  .part {
+    font-family: var(--sans); font-size: 0.7rem; font-weight: 650;
+    letter-spacing: 0.17em; text-transform: uppercase; color: var(--ink-faint);
+    margin: 2.8rem 0 0.9rem;
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+<header class="chapter-head">
+  <div class="chapter-eyebrow">Phase −1</div>
+  <h1>Python Mastery</h1>
+  <p class="chapter-standfirst">Python is not the subject here — it is the notation. The subject is problem-solving: recognising what a real problem actually needs, and expressing that solution correctly. Each chapter opens with a problem a working developer genuinely encounters, and teaches whatever that problem requires.</p>
+</header>
+
+<h2>How to use this</h2>
+
+<p>Each chapter is read here, in the browser. The exercises are then written and run in a real editor and a real terminal — <code>micro</code> for writing, <code>python3</code> for running, <code>pytest</code> for grading. The two surfaces are deliberate: a textbook for learning, a workshop for doing.</p>
+
+<p>Chapter content is <strong>self-sufficient</strong>. Everything an exercise needs has been taught, either in that chapter or in one before it. If something in an exercise seems to require a tool that has never appeared, check <a href="syllabus_map.md">the syllabus map</a> — if it is not listed there, that is a gap in the syllabus, not in you, and it should be flagged rather than worked around.</p>
+
+<div class="part">Part One · Values and Control</div>
+
+<ul class="toc">
+  <li>
+    <a href="syllabus/chapter_01_product_feed/content.html">
+      <span class="num">01</span>
+      <span class="body">
+        <span class="ttl">Pricing a Product Feed</span>
+        <span class="sub">A supplier feed arrives every morning as raw text. Turning a cost, a weight and a tax rate into a price a customer can be charged.</span>
+        <span class="teaches">Values · types · names and binding · arithmetic · float precision · conversion · f-strings and format specifiers · reading tracebacks</span>
+      </span>
+      <span class="status">Ready</span>
+    </a>
+  </li>
+  <li class="pending">
+    <a>
+      <span class="num">02</span>
+      <span class="body">
+        <span class="ttl">Deciding What to Do With an Order</span>
+        <span class="sub">Orders arrive needing different handling depending on value, stock and destination. Branching, comparison, and boolean logic.</span>
+        <span class="teaches">Planned</span>
+      </span>
+      <span class="status">Not written</span>
+    </a>
+  </li>
+  <li class="pending">
+    <a>
+      <span class="num">03</span>
+      <span class="body">
+        <span class="ttl">Processing Orders as They Arrive</span>
+        <span class="sub">A day's orders, one after another. Repetition, accumulation, and knowing when to stop.</span>
+        <span class="teaches">Planned</span>
+      </span>
+      <span class="status">Not written</span>
+    </a>
+  </li>
+</ul>
+
+<h2>Records</h2>
+
+<ul>
+  <li><a href="syllabus_map.md">Syllabus map</a> — every concept formally taught so far, and what is deliberately deferred.</li>
+  <li><a href="progress_log.md">Progress log</a> — one line per chapter and exam.</li>
+  <li><a href="weak_spots.md">Weak spots</a> — what needs more repetitions, updated after every review.</li>
+</ul>
+
+</main>
+</body>
+</html>
