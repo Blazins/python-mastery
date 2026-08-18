@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title }}</title>
+<link rel="stylesheet" href="{{ '/assets/textbook.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/exercises.css' | relative_url }}">
+</head>
+<body class="exercise-page">
+<main class="page">
+
+<header class="chapter-head">
+  <div class="chapter-eyebrow">{{ page.eyebrow }}</div>
+  <h1>{{ page.heading }}</h1>
+  <p class="chapter-standfirst">{{ page.standfirst }}</p>
+</header>
+
+{{ content }}
+
+<nav class="chapter-foot">
+  <a href="content.html" class="prv"><span class="dir">Back to</span>The chapter</a>
+  <a href="{{ '/' | relative_url }}" class="nxt"><span class="dir">Go to</span>Contents →</a>
+</nav>
+
+</main>
+</body>
+</html>

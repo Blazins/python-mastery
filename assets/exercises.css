@@ -1,0 +1,51 @@
+/* ── Exercise pages ───────────────────────────────────────────────────
+   Markdown renders to plain heading levels, so these overrides give an
+   exercise set its own visual identity without touching chapter pages. */
+
+.exercise-page h2 {
+  font-family: var(--serif);
+  font-size: 1.62rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  text-transform: none;
+  color: var(--ink);
+  margin: 4rem 0 1.1rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 2px solid var(--rule);
+}
+
+.exercise-page h2:first-of-type { margin-top: 2.4rem; }
+
+.exercise-page h3 {
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin: 2.2rem 0 0.8rem;
+}
+
+.exercise-page hr {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 3rem 0;
+}
+
+/* Task lists in the closing checklist */
+.exercise-page li input[type="checkbox"] {
+  margin-right: 0.5rem;
+  accent-color: var(--accent);
+}
+.exercise-page ul:has(input[type="checkbox"]) {
+  list-style: none;
+  padding-left: 0.2rem;
+}
+
+.exercise-page blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--def-bg);
+  margin: 1.9rem 0;
+  padding: 0.9rem 1.3rem;
+  border-radius: 0 4px 4px 0;
+}
+.exercise-page blockquote p:last-child { margin-bottom: 0; }

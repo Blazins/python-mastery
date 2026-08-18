@@ -1,7 +1,9 @@
-# Chapter 1 — Exercises
-
-**Pricing a Product Feed**
-
+---
+layout: exercises
+title: "Chapter 1 · Exercises"
+eyebrow: "Chapter One · Exercises"
+heading: "Pricing a Product Feed"
+standfirst: "Six problems, harder than the worked examples, to be attempted unaided. Every input is given; the work is deciding what each one actually needs."
 ---
 
 ## How to submit

@@ -1,8 +1,6 @@
 # Python Mastery
 
-A self-built textbook and graded exercise platform for rebuilding Python
-fluency from the ground up — Phase −1 of a longer path toward GenAI/LLM
-engineering.
+A textbook and graded exercise platform for learning to write Python fluently.
 
 **📖 [Read the chapters](https://blazins.github.io/python-mastery/)**
 
@@ -10,7 +8,7 @@ engineering.
 
 ## What this is
 
-Python here is not the subject — it is the notation. The subject is
+Python here is not really the subject — it is the notation. The subject is
 problem-solving: recognising what a real problem actually needs, and expressing
 that solution correctly.
 
@@ -34,9 +32,9 @@ Two rules shape everything:
 Objectively, then qualitatively.
 
 Every chapter ships a `pytest` suite that runs automatically on each pull
-request. Passing means the solution meets the published spec. It does not mean
-the solution is good — that is decided in review, which covers edge cases beyond
-the visible tests, whether the code is idiomatic, and whether the right tool was
+request. Passing means a solution meets the published spec. It does not mean the
+solution is good — that is decided in review, which covers edge cases beyond the
+visible tests, whether the code is idiomatic, and whether the right tool was
 chosen deliberately rather than arrived at by luck.
 
 The suites also check *how* a result was reached, not only what was printed. A
@@ -53,10 +51,6 @@ syllabus/chapter_NN_<slug>/
     exercises.md               that chapter's exercise set
     test_chapter_NN.py         objective grading suite
     submissions/               solutions
-    review.md                  grading and feedback
-syllabus_map.md                every concept formally taught so far
-progress_log.md                one line per chapter and exam
-weak_spots.md                  what needs more repetitions
 ```
 
 ## Running it locally
@@ -67,23 +61,6 @@ python3 -m venv .venv
 .venv/bin/pytest
 ```
 
-Chapters are read in a browser; solutions are written in `micro` and run in a
-real terminal. See [CONTRIBUTING.md](CONTRIBUTING.md) for the submission
+Chapters are read in a browser; solutions are written in a plain editor and run
+in a real terminal. See [CONTRIBUTING.md](CONTRIBUTING.md) for the submission
 workflow.
-
-## On authorship
-
-This repository has two kinds of commit, and they are deliberately kept
-distinguishable:
-
-- **Chapter content, test suites, and styling** are generated with Claude and
-  committed *authored by Claude*, not merely tagged. They do not appear as the
-  repository owner's work in `git log`, in contributor statistics, or in the
-  contribution graph.
-- **Exercise solutions** in each chapter's `submissions/` directory are written
-  unaided, in a plain editor with no autocomplete or code intelligence, and
-  arrive through pull requests.
-
-`git log --author="Mike Wambugu"` therefore returns only hand-written work. That
-separation is the point: a platform that teaches unaided writing would be a poor
-advertisement for itself if its authorship were ambiguous.

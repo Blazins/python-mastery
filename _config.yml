@@ -1,0 +1,25 @@
+# Minimal Jekyll config for GitHub Pages.
+#
+# Its only real job is to let exercise sets stay as a single Markdown file that
+# is readable in a terminal next to the editor, while still rendering as a
+# styled page on the site. No duplicated HTML copy to drift out of sync.
+
+title: Python Mastery
+description: A textbook and graded exercise platform for learning to write Python fluently.
+
+# Hand-built pages are passed through untouched; only Markdown is processed.
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+exclude:
+  - .venv/
+  - .gitignore
+  - pytest.ini
+  - CONTRIBUTING.md
+  - "**/test_*.py"
+  - "**/submissions/"
+  - vendor/
+  - Gemfile
+  - Gemfile.lock
