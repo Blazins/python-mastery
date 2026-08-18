@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix A · Git and GitHub</title>
+<link rel="stylesheet" href="../assets/textbook.css">
+<style>
+  .cmd {
+    font-family: var(--mono); font-size: 0.82rem; line-height: 1.6;
+    background: #26231f; color: #e8e2d6; padding: 1.1rem 1.3rem;
+    border-radius: 5px; overflow-x: auto; margin: 0 0 1.4rem;
+  }
+  .cmd .p { color: #7d766b; }        /* prompt */
+  .cmd .c { color: #7d766b; font-style: italic; }
+  .cmd .g { color: #9fc08a; }        /* the command itself */
+  .cmd .a { color: #d9c470; }        /* arguments */
+</style>
+</head>
+<body>
+<main class="page">
+
+<header class="chapter-head">
+  <div class="chapter-eyebrow">Appendix A</div>
+  <h1>Git, GitHub, and the Working Loop</h1>
+  <p class="chapter-standfirst">Every professional codebase you will ever touch is under version control, and almost every team ships through pull requests with automated checks. This appendix explains what those things actually are — not which buttons to press, but what is happening underneath, so the daily commands stop being incantations.</p>
+</header>
+
+<h2>Part 1 · Git, on your own machine</h2>
+
+<h3>The problem version control solves</h3>
+
+<p>Without version control, a codebase has exactly one state: whatever is on disk right now. Change a file and the previous version is gone. Two people editing the same project overwrite each other. There is no way to ask "what did this look like last Tuesday", or "who changed this line and why", or "undo the last three hours but keep the hour before".</p>
+
+<p><strong>Git</strong> solves this by recording <em>snapshots</em> of your entire project over time, along with who made each one and why. Everything else — branches, merges, pull requests — is built on that single idea.</p>
+
+<div class="aside">
+  <span class="label">Git is not GitHub</span>
+  Git is a program on your computer. It works completely offline and has nothing to do with any website. GitHub is a company that hosts Git repositories and adds collaboration features on top — pull requests, code review, automation. You could use Git forever without GitHub. Keeping the two separate in your head prevents a lot of confusion later.
+</div>
+
+<h3>The three areas</h3>
+
+<p>This is the piece most people never get told explicitly, and it makes <code>git add</code> feel arbitrary until you know it. Git has three places a change can live.</p>
+
+<figure>
+<svg viewBox="0 0 640 210" role="img" aria-label="Diagram: working directory to staging area to repository, via git add and git commit">
+  <defs>
+    <marker id="a1" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#7a3b2e"/>
+    </marker>
+  </defs>
+  <rect x="6" y="46" width="176" height="96" rx="6" fill="#f0eee7" stroke="#ddd5c7" stroke-width="1.5"/>
+  <text x="94" y="76" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="600" fill="#1c1a17">Working directory</text>
+  <text x="94" y="99" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#7c7469">The files on disk</text>
+  <text x="94" y="117" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#7c7469">as you edit them</text>
+
+  <rect x="232" y="46" width="176" height="96" rx="6" fill="#f7f3ea" stroke="#ddd5c7" stroke-width="1.5"/>
+  <text x="320" y="76" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="600" fill="#1c1a17">Staging area</text>
+  <text x="320" y="99" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#7c7469">What you have chosen</text>
+  <text x="320" y="117" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#7c7469">to include next</text>
+
+  <rect x="458" y="46" width="176" height="96" rx="6" fill="#f0eee7" stroke="#7a3b2e" stroke-width="1.8"/>
+  <text x="546" y="76" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="600" fill="#1c1a17">Repository</text>
+  <text x="546" y="99" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#7c7469">Permanent history</text>
+  <text x="546" y="117" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#7c7469">of commits</text>
+
+  <path d="M186,94 L226,94" stroke="#7a3b2e" stroke-width="1.8" marker-end="url(#a1)"/>
+  <text x="206" y="82" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10.5" fill="#7a3b2e">git add</text>
+
+  <path d="M412,94 L452,94" stroke="#7a3b2e" stroke-width="1.8" marker-end="url(#a1)"/>
+  <text x="432" y="82" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10.5" fill="#7a3b2e">git commit</text>
+
+  <text x="94" y="172" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#7c7469">git diff</text>
+  <text x="320" y="172" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#7c7469">git diff --staged</text>
+  <text x="546" y="172" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#7c7469">git log</text>
+  <text x="320" y="194" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#a8a196">(what each command shows you)</text>
+</svg>
+<figcaption>Changes move left to right. <code>git status</code> shows you all three at once, which is why it is the command you will run most.</figcaption>
+</figure>
+
+<p>The staging area exists so that a commit can be <em>deliberate</em>. You might have edited four files but only two of them belong to the change you want to record. <code>git add</code> is you saying "these, not those". Without it, every commit would be "everything currently different", which makes history far less useful to read later.</p>
+
+<h3>What a commit actually is</h3>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>A <span class="term">commit</span> is a permanent, immutable record containing: a complete snapshot of every tracked file at that moment, a pointer to the commit that came before it (its <em>parent</em>), the author and timestamp, a message explaining why, and a unique 40-character identifier — its <strong>SHA</strong> — computed from all of the above.</p>
+</div>
+
+<p>Two consequences follow from that definition, and both matter daily.</p>
+
+<p><strong>Commits form a chain.</strong> Because each commit points at its parent, history is a linked sequence running backwards from the newest commit to the very first. That chain <em>is</em> the history — there is no separate log file.</p>
+
+<p><strong>Commits are immutable.</strong> You cannot edit a commit. Commands that appear to (<code>--amend</code>, <code>rebase</code>) actually build new commits and move pointers to them; the originals are simply abandoned. This is why rewriting history that other people have already pulled is antisocial — their chain no longer matches yours.</p>
+
+<h3>Branches are pointers, not copies</h3>
+
+<p>This is the single most useful thing to understand about Git, and almost everyone starts out believing something else. People assume a branch is a copy of the project. It is not.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>A <span class="term">branch</span> is a movable pointer to one commit. That is the entire implementation. Creating a branch writes a file containing a 40-character SHA — it does not copy a single line of your code.</p>
+</div>
+
+<figure>
+<svg viewBox="0 0 640 250" role="img" aria-label="Diagram: a commit chain where main and a feature branch are labels pointing at different commits">
+  <defs>
+    <marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#a8a196"/>
+    </marker>
+  </defs>
+  <line x1="70" y1="120" x2="580" y2="120" stroke="#e4dccd" stroke-width="2"/>
+
+  <circle cx="90"  cy="120" r="15" fill="#f0eee7" stroke="#7c7469" stroke-width="1.6"/>
+  <circle cx="200" cy="120" r="15" fill="#f0eee7" stroke="#7c7469" stroke-width="1.6"/>
+  <circle cx="310" cy="120" r="15" fill="#f0eee7" stroke="#7c7469" stroke-width="1.6"/>
+  <text x="90"  y="125" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#4a453e">a1c</text>
+  <text x="200" y="125" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#4a453e">9f2</text>
+  <text x="310" y="125" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#4a453e">4d8</text>
+
+  <circle cx="430" cy="66" r="15" fill="#f7f3ea" stroke="#7a3b2e" stroke-width="1.8"/>
+  <circle cx="540" cy="66" r="15" fill="#f7f3ea" stroke="#7a3b2e" stroke-width="1.8"/>
+  <text x="430" y="71" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#4a453e">b71</text>
+  <text x="540" y="71" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#4a453e">e03</text>
+  <path d="M325,111 L415,75" stroke="#e4dccd" stroke-width="2"/>
+  <line x1="445" y1="66" x2="525" y2="66" stroke="#e4dccd" stroke-width="2"/>
+
+  <rect x="272" y="168" width="76" height="26" rx="4" fill="#ffffff" stroke="#7c7469" stroke-width="1.4"/>
+  <text x="310" y="186" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" fill="#4a453e">main</text>
+  <path d="M310,166 L310,140" stroke="#a8a196" stroke-width="1.5" marker-end="url(#a2)"/>
+
+  <rect x="474" y="8" width="132" height="26" rx="4" fill="#ffffff" stroke="#7a3b2e" stroke-width="1.5"/>
+  <text x="540" y="26" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" fill="#7a3b2e">ch01-submissions</text>
+  <path d="M540,36 L540,46" stroke="#a8a196" stroke-width="1.5" marker-end="url(#a2)"/>
+
+  <text x="320" y="228" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" fill="#7c7469">Two labels on one shared history. The first three commits belong to both.</text>
+</svg>
+<figcaption>Committing on a branch creates a new commit and moves that branch's pointer forward. <code>main</code> does not move, because nothing moved it.</figcaption>
+</figure>
+
+<p>Because a branch is just a label, branching is instant and free regardless of project size, and deleting a branch destroys nothing that has been merged — it removes a label, not commits.</p>
+
+<p><strong><code>HEAD</code></strong> is a further pointer, and it points at whichever branch you are currently on. That is what "which branch am I on" means mechanically. <code>git switch main</code> moves <code>HEAD</code> to <code>main</code> and updates the files on disk to match that commit.</p>
+
+<div class="demo">
+  <div class="label">Watch the pointers move</div>
+  <div id="branchDemo"></div>
+  <div style="margin-top:1rem">
+    <button id="bPrev">← Back</button>
+    <button id="bNext">Step →</button>
+    <button id="bReset">Reset</button>
+  </div>
+</div>
+
+<h3>Merging</h3>
+
+<p>Merging combines the work of two branches. Git has more than one way to do it, and the difference shows up in what your history looks like afterwards.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Kind</th><th>What happens</th><th>When you see it</th></tr></thead>
+<tbody>
+<tr><td><strong>Fast-forward</strong></td><td><code>main</code> has not moved since you branched, so Git simply slides <code>main</code>'s pointer forward to your latest commit. No new commit is made.</td><td>Simple, linear work</td></tr>
+<tr><td><strong>Merge commit</strong></td><td>Both branches moved. Git creates a new commit with <em>two</em> parents, joining the histories.</td><td>Parallel work by several people</td></tr>
+<tr><td><strong>Squash merge</strong></td><td>All the commits on your branch are combined into a single new commit on <code>main</code>. Your branch's individual commits are not copied over.</td><td>What this repository uses</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Squashing gives you the best of both: granular commits while you work (useful for you, and for anyone reviewing your process), and one clean entry per chapter on <code>main</code> (useful for anyone reading the project's history later). The detailed history still exists on the pull request permanently.</p>
+
+<h3>Remotes</h3>
+
+<p>A <strong>remote</strong> is another copy of the repository, usually on a server. Yours is called <code>origin</code> — a convention, not a keyword — and lives on GitHub.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>git fetch</code></td><td>Downloads new commits from the remote. Changes nothing you are working on.</td></tr>
+<tr><td><code>git pull</code></td><td><code>fetch</code>, then merge those commits into your current branch. Changes your files.</td></tr>
+<tr><td><code>git push</code></td><td>Uploads your commits to the remote.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Your local <code>main</code> and the remote's <code>main</code> are separate pointers that can disagree. Git tracks the remote's position as <code>origin/main</code>, which is why <code>git status</code> can tell you that you are "3 commits ahead" — it is comparing two labels.</p>
+
+<h2>Part 2 · GitHub, on top of Git</h2>
+
+<p>GitHub hosts your repository and adds a collaboration layer. Everything in this part is a <em>GitHub</em> feature — none of it exists in Git itself.</p>
+
+<h3>What a pull request actually is</h3>
+
+<p>A pull request is the piece people find most mysterious, usually because the name is a historical accident. It is worth being precise.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>A <span class="term">pull request</span> is a request to merge one branch into another, plus everything that gathers around that request: the accumulated diff, a discussion thread, line-by-line review comments, and the results of any automated checks. It is a <em>proposal</em>, held open until someone decides.</p>
+</div>
+
+<p>The name comes from the era of mailing lists: you would email a maintainer asking them to <em>pull</em> your changes into their copy. GitHub kept the phrase and built an interface around it. Nothing is being pulled by you — you are asking for your branch to be merged.</p>
+
+<p>Four things a pull request gives you that a bare merge does not:</p>
+
+<ul>
+  <li><strong>A reviewable unit.</strong> The diff between your branch and the target, as one coherent change rather than a scattering of commits.</li>
+  <li><strong>A place for judgment.</strong> Comments attached to specific lines, which is where code review actually happens.</li>
+  <li><strong>A trigger for automation.</strong> Opening or updating a pull request is an event other systems can react to — which is how tests come to run on it.</li>
+  <li><strong>A permanent record.</strong> Long after the branch is deleted, the pull request preserves what changed, what was said about it, and what the tests reported.</li>
+</ul>
+
+<p>The behaviour that surprises everyone once: <strong>a pull request tracks a branch, not a snapshot.</strong> Push another commit to that branch and the pull request updates itself and re-runs its checks. You never open a second pull request to fix something in the first.</p>
+
+<h3>Review</h3>
+
+<p>A reviewer reads the diff and leaves comments on specific lines, then concludes with one of three outcomes: <strong>approve</strong>, <strong>request changes</strong> (a block, until addressed), or <strong>comment</strong> (observations, no verdict). You respond by pushing more commits to the same branch.</p>
+
+<div class="aside">
+  <span class="label">A wrinkle in this repository</span>
+  GitHub does not let you formally approve your own pull request. Here, review arrives as comments and change requests rather than a green "approved" badge, and the automated check is the real gate. The substance is identical; only the badge is missing.
+</div>
+
+<h3>The other GitHub features you will meet</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Feature</th><th>What it is</th><th>Here</th></tr></thead>
+<tbody>
+<tr><td><strong>Issues</strong></td><td>Tracked units of work or bug reports, discussable and assignable. Independent of any code change.</td><td>Useful for logging a syllabus gap</td></tr>
+<tr><td><strong>Actions</strong></td><td>GitHub's automation. Runs your workflows on a fresh machine in response to events.</td><td>Grades every pull request</td></tr>
+<tr><td><strong>Pages</strong></td><td>Static site hosting straight from a repository.</td><td>Serves this site</td></tr>
+<tr><td><strong>Branch protection</strong></td><td>Rules on a branch — require checks to pass, require review, forbid force-pushes.</td><td>Under consideration</td></tr>
+<tr><td><strong>Forks</strong></td><td>Your own server-side copy of someone else's repository, so you can propose changes without write access.</td><td>How you will contribute to open source later</td></tr>
+<tr><td><strong>Tags and releases</strong></td><td>A permanent name for one commit (<code>v1.0</code>), optionally published with notes.</td><td>Later, for finished projects</td></tr>
+<tr><td><strong>Draft pull requests</strong></td><td>A pull request explicitly marked not-ready, so checks run but nobody reviews yet.</td><td>Useful for a half-finished chapter</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Part 3 · Continuous integration</h2>
+
+<h3>What the phrase actually means</h3>
+
+<p>"Continuous integration" is older than GitHub and describes a practice, not a product. To understand it, consider the alternative that it was invented to kill.</p>
+
+<p>Teams used to work in isolation for weeks, then combine everything at the end. That final combination was reliably catastrophic — a hundred small incompatibilities surfacing simultaneously, each one now buried under weeks of subsequent work. The industry called it <em>integration hell</em>, and it could consume as much time as the original development.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p><span class="term">Continuous integration</span> is the practice of merging work into a shared mainline frequently — daily or more — with automated verification on every merge, so that incompatibilities surface within minutes of being created, while the change is still small and still fresh in the author's mind.</p>
+</div>
+
+<p>The word "continuous" refers to the <em>frequency of integration</em>, not to a machine running constantly. The automation is what makes frequent integration practical, which is why "CI" has come to mean the automation in everyday speech.</p>
+
+<h3>What it is mechanically</h3>
+
+<p>When you push, GitHub reads <code>.github/workflows/grade.yml</code> and, if the event matches, allocates a fresh virtual machine — a <strong>runner</strong> — that has never seen your project. It then executes your steps in order: check out the code, install Python, install pytest, run the suite. The exit status of those steps determines whether the check passes.</p>
+
+<figure>
+<svg viewBox="0 0 640 132" role="img" aria-label="Diagram: push triggers a runner which checks out code, installs dependencies, runs tests, and reports pass or fail">
+  <defs>
+    <marker id="a3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#7a3b2e"/>
+    </marker>
+  </defs>
+  <rect x="4"   y="34" width="96" height="46" rx="5" fill="#f0eee7" stroke="#ddd5c7" stroke-width="1.4"/>
+  <text x="52"  y="55" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="600" fill="#1c1a17">git push</text>
+  <text x="52"  y="70" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#7c7469">an event</text>
+
+  <rect x="128" y="34" width="106" height="46" rx="5" fill="#f7f3ea" stroke="#ddd5c7" stroke-width="1.4"/>
+  <text x="181" y="55" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="600" fill="#1c1a17">Fresh runner</text>
+  <text x="181" y="70" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#7c7469">clean machine</text>
+
+  <rect x="262" y="34" width="106" height="46" rx="5" fill="#f7f3ea" stroke="#ddd5c7" stroke-width="1.4"/>
+  <text x="315" y="55" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="600" fill="#1c1a17">Checkout</text>
+  <text x="315" y="70" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#7c7469">+ install deps</text>
+
+  <rect x="396" y="34" width="106" height="46" rx="5" fill="#f7f3ea" stroke="#ddd5c7" stroke-width="1.4"/>
+  <text x="449" y="55" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="600" fill="#1c1a17">pytest</text>
+  <text x="449" y="70" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#7c7469">the whole suite</text>
+
+  <rect x="530" y="34" width="106" height="46" rx="5" fill="#f0eee7" stroke="#7a3b2e" stroke-width="1.7"/>
+  <text x="583" y="55" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="600" fill="#1c1a17">Pass / fail</text>
+  <text x="583" y="70" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#7c7469">on the PR</text>
+
+  <path d="M104,57 L122,57"  stroke="#7a3b2e" stroke-width="1.6" marker-end="url(#a3)"/>
+  <path d="M238,57 L256,57"  stroke="#7a3b2e" stroke-width="1.6" marker-end="url(#a3)"/>
+  <path d="M372,57 L390,57"  stroke="#7a3b2e" stroke-width="1.6" marker-end="url(#a3)"/>
+  <path d="M506,57 L524,57"  stroke="#7a3b2e" stroke-width="1.6" marker-end="url(#a3)"/>
+</svg>
+<figcaption>The machine is destroyed afterwards. Every run starts from nothing, every time.</figcaption>
+</figure>
+
+<p><strong>Why a clean machine matters so much.</strong> Your laptop has years of accumulated state — installed packages, environment variables, files you forgot you created. Code can depend on that state without anyone realising, which produces the oldest excuse in software: <em>"it works on my machine."</em> A runner that starts empty every time cannot be fooled. If it passes there, it will pass for anyone.</p>
+
+<h3>Red and green</h3>
+
+<p>Green means every step exited successfully — here, that every test passed. Red means something exited non-zero. Red is information, not judgment: it is a machine reporting that a specific assertion did not hold, and the log names which one and what it expected. It is the cheapest, fastest, least personal feedback in the entire process, which is exactly why you want it to run before a human looks at anything.</p>
+
+<div class="aside warn">
+  <span class="label">What green does not mean</span>
+  Green means the code meets the published specification. It does not mean the code is good. A solution can pass every visible test and still be wrong in ways the tests do not reach, or correct but badly expressed. That is what review is for, and it is why passing checks is the floor rather than the finish line.
+</div>
+
+<h2>Part 4 · The commands, and what each one really does</h2>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>What is actually happening</th></tr></thead>
+<tbody>
+<tr><td><code>git status</code></td><td>Reports all three areas at once: what has changed on disk, what is staged, and how your branch compares with <code>origin</code>. Run it constantly.</td></tr>
+<tr><td><code>git switch main</code></td><td>Points <code>HEAD</code> at <code>main</code> and rewrites the files on disk to match that commit.</td></tr>
+<tr><td><code>git switch -c ch01-submissions</code></td><td>Creates a new label pointing at the current commit, then points <code>HEAD</code> at it. No files change — the new branch starts identical.</td></tr>
+<tr><td><code>git pull</code></td><td>Downloads new commits from <code>origin</code> and merges them into your current branch.</td></tr>
+<tr><td><code>git add &lt;file&gt;</code></td><td>Copies that file's current state into the staging area — your declaration of what belongs in the next commit.</td></tr>
+<tr><td><code>git commit -m "…"</code></td><td>Records everything staged as a new immutable commit, with your message, pointing at the current commit as its parent. Moves the branch label forward.</td></tr>
+<tr><td><code>git diff</code></td><td>Shows changes on disk that are <em>not</em> staged. Add <code>--staged</code> to see what is.</td></tr>
+<tr><td><code>git log --oneline</code></td><td>Walks the parent chain backwards from where you are, one line per commit.</td></tr>
+<tr><td><code>git push -u origin ch01-submissions</code></td><td>Uploads the branch and records that it corresponds to <code>origin</code>'s copy. The <code>-u</code> is needed only the first time; afterwards <code>git push</code> alone is enough.</td></tr>
+<tr><td><code>gh pr create --fill</code></td><td>Opens a pull request proposing your branch be merged into <code>main</code>, using your commit messages for the title and body.</td></tr>
+<tr><td><code>gh pr checks --watch</code></td><td>Polls the automated checks and prints their status as they complete.</td></tr>
+<tr><td><code>gh pr merge --squash --delete-branch</code></td><td>Combines your branch's commits into one commit on <code>main</code>, then deletes the branch locally and remotely.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Part 5 · Why the platform works this way</h2>
+
+<p>None of the above is a teaching device invented for this syllabus. It is, almost exactly, how professional software teams operate, and the overlap is deliberate.</p>
+
+<p><strong>Feature branches are the industry default.</strong> The overwhelming majority of teams work on short-lived branches cut from a protected mainline. The pattern is old, stable, and near-universal.</p>
+
+<p><strong>Almost nothing reaches production without a pull request.</strong> Whatever the company, whatever the language, the unit of work is a branch proposed for merge, discussed, and approved. Arriving at a job already fluent in that loop removes a real source of early friction — most people learn it on the job, awkwardly, in their first weeks.</p>
+
+<p><strong>Code review is the most consistent practice in good engineering organisations.</strong> Being reviewed is a skill: reading criticism of your work as information rather than verdict, responding with a commit rather than an argument, knowing when to push back. It only develops by being reviewed repeatedly, which is why review is built into this platform rather than bolted on.</p>
+
+<p><strong>Automated checks gate merges everywhere.</strong> Red-means-stop is the ambient condition of professional work.</p>
+
+<p>There is also a narrower reason, specific to learning. The exercises here must be attempted unaided — and unaided work needs feedback that is <em>immediate</em>, <em>objective</em>, and <em>impersonal</em>, or the temptation to look something up becomes overwhelming. A machine that says "line 3 printed <code>£11.72</code> where <code>£11.73</code> was expected" gives you exactly enough to find your own error and nothing that solves it for you. That is a better teacher than a hint, and a far better one than an answer.</p>
+
+<p>Finally: the record. A repository with dozens of merged pull requests, each carrying a real test run and a real review conversation, is evidence of sustained practice that a finished project cannot show. The project shows what you can build. The history shows how you work.</p>
+
+<nav class="chapter-foot">
+  <a href="../index.html" class="prv"><span class="dir">Back to</span>Contents</a>
+  <a href="../syllabus/chapter_01_product_feed/content.html" class="nxt"><span class="dir">Go to</span>Chapter 1 →</a>
+</nav>
+
+</main>
+
+<script>
+(function () {
+  var steps = [
+    { main: 2, feat: null, head: "main", commits: 3,
+      note: "You are on main, which points at the newest commit. Nothing else exists yet." },
+    { main: 2, feat: 2, head: "ch01-submissions", commits: 3,
+      note: "git switch -c ch01-submissions — a second label is created pointing at the SAME commit, and HEAD moves to it. No files changed; nothing was copied." },
+    { main: 2, feat: 3, head: "ch01-submissions", commits: 4,
+      note: "git commit — a new commit is created with the current one as its parent, and the branch you are on moves forward. main has not moved, because nothing moved it." },
+    { main: 2, feat: 4, head: "ch01-submissions", commits: 5,
+      note: "Another commit. Your branch is now two commits ahead of main. Both labels still share the first three commits." },
+    { main: 4, feat: 4, head: "main", commits: 5,
+      note: "After merging, main points at your latest work too. Deleting the branch now would remove only the label — every commit is still reachable from main." }
+  ];
+  var i = 0;
+  var host = document.getElementById("branchDemo");
+
+  function render() {
+    var s = steps[i], W = 520, y0 = 96, r = 13, gap = 78, x0 = 34, out = "";
+    out += '<svg viewBox="0 0 ' + W + ' 170" style="width:100%;height:auto">';
+    for (var n = 0; n < s.commits; n++) {
+      var cx = x0 + n * gap, cy = (n >= 3) ? y0 - 42 : y0;
+      if (n > 0) {
+        var px = x0 + (n - 1) * gap, py = (n - 1 >= 3) ? y0 - 42 : y0;
+        out += '<line x1="' + (px + r) + '" y1="' + py + '" x2="' + (cx - r) + '" y2="' + cy + '" stroke="#e4dccd" stroke-width="2"/>';
+      }
+      var onFeat = n >= 3;
+      out += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + (onFeat ? '#f7f3ea' : '#f0eee7')
+           + '" stroke="' + (onFeat ? '#7a3b2e' : '#7c7469') + '" stroke-width="1.6"/>';
+      out += '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a453e">c' + (n + 1) + '</text>';
+    }
+    function label(idx, text, color, below) {
+      if (idx === null) return "";
+      var cx = x0 + idx * gap, cy = (idx >= 3) ? y0 - 42 : y0;
+      var ly = below ? cy + 46 : cy - 44;
+      var bold = (s.head === text);
+      var w = text.length * 6.6 + 16;
+      return '<rect x="' + (cx - w / 2) + '" y="' + (ly - 13) + '" width="' + w + '" height="22" rx="4" fill="#fff" stroke="' + color
+           + '" stroke-width="' + (bold ? 2 : 1.2) + '"/>'
+           + '<text x="' + cx + '" y="' + (ly + 2) + '" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="' + color
+           + '" font-weight="' + (bold ? '700' : '400') + '">' + text + '</text>'
+           + '<line x1="' + cx + '" y1="' + (below ? ly - 13 : ly + 9) + '" x2="' + cx + '" y2="' + (below ? cy + r + 2 : cy - r - 2) + '" stroke="#c9c2b6" stroke-width="1.3"/>';
+    }
+    out += label(s.main, "main", "#7c7469", true);
+    out += label(s.feat, "ch01-submissions", "#7a3b2e", false);
+    out += '</svg>';
+
+    host.innerHTML = out
+      + '<div style="font-family:Inter,sans-serif;font-size:13px;line-height:1.55;color:#4a453e;border-top:1px solid #ddd5c7;padding-top:11px;margin-top:6px">'
+      + '<strong style="color:#7a3b2e">HEAD → ' + s.head + '</strong><br>' + s.note + '</div>';
+
+    document.getElementById("bPrev").disabled = (i === 0);
+    document.getElementById("bNext").disabled = (i === steps.length - 1);
+  }
+  document.getElementById("bNext").onclick = function () { if (i < steps.length - 1) { i++; render(); } };
+  document.getElementById("bPrev").onclick = function () { if (i > 0) { i--; render(); } };
+  document.getElementById("bReset").onclick = function () { i = 0; render(); };
+  render();
+})();
+</script>
+</body>
+</html>
