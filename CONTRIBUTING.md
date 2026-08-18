@@ -1,5 +1,10 @@
 # How work gets submitted here
 
+> New to Git and GitHub, or unsure what any of the commands below actually do?
+> Read [Appendix A — Git, GitHub, and the Working Loop](https://blazins.github.io/python-mastery/guides/git-and-github.html)
+> first. It explains what commits, branches, pull requests and continuous
+> integration are, rather than only which commands to type.
+
 This repository is deliberately run like a real project rather than a folder of
 homework. Solutions arrive as pull requests, continuous integration grades them
 before a human looks, and review happens as inline comments on the diff. The
@@ -68,6 +73,25 @@ until it is green and approved.
 
 **9. Merge.** The chapter's `review.md` and `progress_log.md` are updated, and
 the next chapter opens.
+
+```bash
+gh pr merge --squash --delete-branch
+git switch main && git pull
+```
+
+## What `main` will and will not accept
+
+`main` is protected. Three rules apply:
+
+- **The `pytest` check must pass** before a pull request can be merged. Red
+  means the merge button is disabled, not that it is discouraged.
+- **Review conversations must be resolved** before merging, so review comments
+  cannot be quietly merged past.
+- **Force-pushes and branch deletion are refused**, so history on `main` cannot
+  be rewritten or lost by accident.
+
+Your branch is yours — none of this applies to it while you work. The rules take
+effect at the moment you try to merge into `main`.
 
 ## On the test suites
 
