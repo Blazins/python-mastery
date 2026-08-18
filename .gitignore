@@ -10,4 +10,10 @@ __pycache__/
 CLAUDE.md
 weak_spots.md
 progress_log.md
+schedule.md
 syllabus/*/review.md
+
+# Scratch space — try things out here without it landing in a pull request.
+practice.py
+scratch/
+scratch*.py
