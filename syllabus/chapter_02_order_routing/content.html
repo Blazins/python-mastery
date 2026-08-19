@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 2 · Deciding What to Do With an Order</title>
+<link rel="stylesheet" href="../../assets/textbook.css">
+</head>
+<body>
+<main class="page">
+
+<header class="chapter-head">
+  <div class="chapter-eyebrow">Chapter Two</div>
+  <h1>Deciding What to Do With an Order</h1>
+  <p class="chapter-standfirst">Chapter 1's programs did the same thing every time they ran. Real systems do not: an order over £500 ships free, one to a restricted country is held, one from a brand-new account with a mismatched billing address is flagged for review. This chapter is about programs that look at their data and choose.</p>
+</header>
+
+<h2>Why this chapter exists</h2>
+
+<p>Every program in Chapter 1 was a straight line. Read values, compute, print, stop. Run it a thousand times with the same inputs and you get the same thousand outputs, and — more importantly — it did the <em>same work</em> regardless of what the data actually was.</p>
+
+<p>Almost nothing real behaves that way. An order-processing system asks: is this order large enough for free shipping? Is the destination one we ship to? Is the payment method one we accept from a new customer? Does the billing country match the shipping country? Each question has an answer, and each answer changes what happens next.</p>
+
+<p>This chapter gives you the machinery for that: how to ask a question about data and get a definite answer, how to combine several questions into one, and how to make a program take a different path depending on the result. It is the difference between a calculator and something that can be said to make a decision.</p>
+
+<p>The running problem: an order arrives with a value, a destination, an account age, and a payment method. Decide what happens to it — ship it, hold it, flag it, or reject it — and say why.</p>
+
+<h2>1. Asking a question: comparison operators</h2>
+
+<p>Chapter 1 introduced <code>bool</code>, the type with exactly two values, and then barely used it. This is where it earns its place. A <strong>comparison operator</strong> takes two values, asks a question about them, and produces a <code>bool</code>.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operator</th><th>Question</th><th>Example</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td><code>==</code></td><td>Are these equal?</td><td><code>500 == 500</code></td><td><code>True</code></td></tr>
+<tr><td><code>!=</code></td><td>Are these different?</td><td><code>500 != 400</code></td><td><code>True</code></td></tr>
+<tr><td><code>&lt;</code></td><td>Is the left smaller?</td><td><code>400 &lt; 500</code></td><td><code>True</code></td></tr>
+<tr><td><code>&gt;</code></td><td>Is the left larger?</td><td><code>400 &gt; 500</code></td><td><code>False</code></td></tr>
+<tr><td><code>&lt;=</code></td><td>Smaller, or equal?</td><td><code>500 &lt;= 500</code></td><td><code>True</code></td></tr>
+<tr><td><code>&gt;=</code></td><td>Larger, or equal?</td><td><code>500 &gt;= 501</code></td><td><code>False</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The critical thing: a comparison is an <strong>expression that produces a value</strong>, exactly like <code>2 + 2</code> produces <code>4</code>. It is not a special piece of syntax that only works inside an <code>if</code>. You can name its result, print it, and pass it around:</p>
+
+<pre><code>order_value <span class="o">=</span> <span class="n">642.50</span>
+free_shipping_threshold <span class="o">=</span> <span class="n">500.00</span>
+
+qualifies <span class="o">=</span> order_value <span class="o">&gt;=</span> free_shipping_threshold
+
+<span class="f">print</span>(qualifies)
+<span class="f">print</span>(<span class="f">type</span>(qualifies))</code></pre>
+<div class="out">True
+&lt;class 'bool'&gt;</div>
+
+<p>Naming a comparison like this is often the single best thing you can do for readability. <code>qualifies</code> says what the question <em>means</em>; <code>order_value &gt;= 500.00</code> only says what it does.</p>
+
+<div class="aside warn">
+  <span class="label">The mistake everyone makes once</span>
+  <code>=</code> and <code>==</code> are different operators and confusing them is the classic beginner bug. <code>=</code> <strong>binds a name to a value</strong> — it is a command. <code>==</code> <strong>asks whether two values are equal</strong> — it is a question. Writing <code>if order_value = 500:</code> is a <code>SyntaxError</code> in Python, which is a genuine kindness: in several other languages it silently compiles and quietly assigns instead of comparing.
+</div>
+
+<h3>Comparing across types</h3>
+
+<p>Two behaviours here bite people who have not been told about them.</p>
+
+<p><strong>Equality across types is <code>False</code>, not an error.</strong> An <code>int</code> and a <code>str</code> are never equal, even when they look alike:</p>
+
+<pre><code><span class="f">print</span>(<span class="n">500</span> <span class="o">==</span> <span class="s">"500"</span>)
+<span class="f">print</span>(<span class="n">500</span> <span class="o">==</span> <span class="n">500.0</span>)</code></pre>
+<div class="out">False
+True</div>
+
+<p>The first is the one to remember, and it is precisely the Chapter 1 trap arriving in new clothing. If a value came from a feed, a form, or a file, it is a <code>str</code>, and comparing it to a number gives <code>False</code> forever — no error, no warning, just a condition that is never true and a branch that never runs. Convert first.</p>
+
+<p>The second is worth knowing too: <code>500</code> and <code>500.0</code> are different objects of different types, but they compare equal because they represent the same number.</p>
+
+<p><strong>Ordering across types is an error.</strong> Asking whether a string is <em>less than</em> a number is meaningless, and Python says so rather than guessing:</p>
+
+<pre><code><span class="f">print</span>(<span class="s">"500"</span> <span class="o">&lt;</span> <span class="n">600</span>)</code></pre>
+<div class="out">TypeError: '&lt;' not supported between instances of 'str' and 'int'</div>
+
+<h3>Comparing strings</h3>
+
+<p>Strings compare fine with each other, but by a rule that surprises people: <strong>lexicographic order by character code</strong>, one character at a time from the left.</p>
+
+<pre><code><span class="f">print</span>(<span class="s">"apple"</span> <span class="o">&lt;</span> <span class="s">"banana"</span>)     <span class="c"># 'a' before 'b'</span>
+<span class="f">print</span>(<span class="s">"GB"</span> <span class="o">==</span> <span class="s">"gb"</span>)             <span class="c"># case matters</span>
+<span class="f">print</span>(<span class="s">"Zebra"</span> <span class="o">&lt;</span> <span class="s">"apple"</span>)      <span class="c"># uppercase sorts BEFORE lowercase</span></code></pre>
+<div class="out">True
+False
+True</div>
+
+<p>That last line is not a typo. Every uppercase letter has a lower character code than every lowercase letter, so <code>"Zebra"</code> really does sort before <code>"apple"</code>. In practice this means <strong>country codes, product codes and email addresses arriving from different systems must be normalised before comparison</strong>, or <code>"GB"</code> and <code>"gb"</code> will be treated as different countries. Normalising is a string-method job and arrives in the strings chapter; for now, be aware that the comparison is exact and case-sensitive.</p>
+
+<h3>Comparing floats</h3>
+
+<p>Chapter 1 established that floats are stored approximately. That has a direct consequence here:</p>
+
+<pre><code><span class="f">print</span>(<span class="n">0.1</span> <span class="o">+</span> <span class="n">0.2</span> <span class="o">==</span> <span class="n">0.3</span>)</code></pre>
+<div class="out">False</div>
+
+<p>Not a trick — <code>0.1 + 0.2</code> is <code>0.30000000000000004</code>, which is genuinely not <code>0.3</code>. The rule that follows: <strong>never test two computed floats for exact equality.</strong> Ask whether they are close enough instead, by checking that the size of the difference is below some small tolerance:</p>
+
+<pre><code>total <span class="o">=</span> <span class="n">0.1</span> <span class="o">+</span> <span class="n">0.2</span>
+expected <span class="o">=</span> <span class="n">0.3</span>
+tolerance <span class="o">=</span> <span class="n">0.000001</span>
+
+<span class="f">print</span>(<span class="f">abs</span>(total <span class="o">-</span> expected) <span class="o">&lt;</span> tolerance)</code></pre>
+<div class="out">True</div>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p><span class="term"><code>abs(x)</code></span> is a built-in function that returns the <strong>absolute value</strong> of a number — its distance from zero, with any negative sign removed. <code>abs(-3)</code> is <code>3</code>; <code>abs(3)</code> is <code>3</code>. It is used here because the difference could come out negative depending on which value is larger, and you care about the <em>size</em> of the gap, not its direction.</p>
+</div>
+
+<p>Comparing <code>&lt;</code> and <code>&gt;</code> on floats is fine — it is only exact equality that is unsafe. And note that comparing a float against a whole number you wrote yourself (<code>price &gt;= 500.00</code>) is also fine, because no accumulated arithmetic error is involved.</p>
+
+<h3>Chained comparisons</h3>
+
+<p>Python lets you write a range check the way mathematics does, and it means exactly what it looks like:</p>
+
+<pre><code>order_value <span class="o">=</span> <span class="n">250.00</span>
+
+<span class="f">print</span>(<span class="n">100</span> <span class="o">&lt;=</span> order_value <span class="o">&lt;=</span> <span class="n">500</span>)</code></pre>
+<div class="out">True</div>
+
+<p>This is genuinely a chain, not two separate comparisons — Python evaluates <code>order_value</code> once and checks both bounds against it. Most languages do not support this, and the equivalent there is the longer <code>100 &lt;= order_value and order_value &lt;= 500</code>. Use the chain: it is shorter, evaluates the middle term only once, and reads as the range check it is.</p>
+
+<h2>2. Combining questions: <code>and</code>, <code>or</code>, <code>not</code></h2>
+
+<p>One comparison rarely settles a real decision. Free shipping might require an order over £500 <em>and</em> a domestic destination. A review flag might trigger on a new account <em>or</em> a mismatched billing address. Python has three <strong>boolean operators</strong> for combining conditions, and they are words rather than symbols.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operator</th><th>Result</th><th>Read as</th></tr></thead>
+<tbody>
+<tr><td><code>A and B</code></td><td><code>True</code> only when <em>both</em> are true</td><td>"both of these"</td></tr>
+<tr><td><code>A or B</code></td><td><code>True</code> when <em>at least one</em> is true</td><td>"either of these"</td></tr>
+<tr><td><code>not A</code></td><td>The opposite of <code>A</code></td><td>"the reverse of this"</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Written out completely — these are the <strong>truth tables</strong>, and they are worth knowing cold rather than re-deriving each time:</p>
+
+<figure>
+<svg viewBox="0 0 640 214" role="img" aria-label="Truth tables for and, or, and not">
+  <g font-family="JetBrains Mono,monospace" font-size="12">
+    <text x="10"  y="18" font-family="Inter,sans-serif" font-size="12" font-weight="600" fill="#7a3b2e">A and B</text>
+    <rect x="10" y="28" width="176" height="26" fill="#f0eee7" stroke="#ddd5c7"/>
+    <text x="24"  y="46" fill="#4a453e">A</text><text x="76" y="46" fill="#4a453e">B</text><text x="140" y="46" fill="#4a453e">result</text>
+    <rect x="10" y="54" width="176" height="26" fill="#fbf9f5" stroke="#ddd5c7"/>
+    <text x="24" y="72" fill="#1c1a17">True</text><text x="76" y="72" fill="#1c1a17">True</text><text x="140" y="72" fill="#3f7a4a">True</text>
+    <rect x="10" y="80" width="176" height="26" fill="#fbf9f5" stroke="#ddd5c7"/>
+    <text x="24" y="98" fill="#1c1a17">True</text><text x="76" y="98" fill="#1c1a17">False</text><text x="140" y="98" fill="#a33">False</text>
+    <rect x="10" y="106" width="176" height="26" fill="#fbf9f5" stroke="#ddd5c7"/>
+    <text x="24" y="124" fill="#1c1a17">False</text><text x="76" y="124" fill="#1c1a17">True</text><text x="140" y="124" fill="#a33">False</text>
+    <rect x="10" y="132" width="176" height="26" fill="#fbf9f5" stroke="#ddd5c7"/>
+    <text x="24" y="150" fill="#1c1a17">False</text><text x="76" y="150" fill="#1c1a17">False</text><text x="140" y="150" fill="#a33">False</text>
+
+    <text x="232" y="18" font-family="Inter,sans-serif" font-size="12" font-weight="600" fill="#7a3b2e">A or B</text>
+    <rect x="232" y="28" width="176" height="26" fill="#f0eee7" stroke="#ddd5c7"/>
+    <text x="246" y="46" fill="#4a453e">A</text><text x="298" y="46" fill="#4a453e">B</text><text x="362" y="46" fill="#4a453e">result</text>
+    <rect x="232" y="54" width="176" height="26" fill="#fbf9f5" stroke="#ddd5c7"/>
+    <text x="246" y="72" fill="#1c1a17">True</text><text x="298" y="72" fill="#1c1a17">True</text><text x="362" y="72" fill="#3f7a4a">True</text>
+    <rect x="232" y="80" width="176" height="26" fill="#fbf9f5" stroke="#ddd5c7"/>
+    <text x="246" y="98" fill="#1c1a17">True</text><text x="298" y="98" fill="#1c1a17">False</text><text x="362" y="98" fill="#3f7a4a">True</text>
+    <rect x="232" y="106" width="176" height="26" fill="#fbf9f5" stroke="#ddd5c7"/>
+    <text x="246" y="124" fill="#1c1a17">False</text><text x="298" y="124" fill="#1c1a17">True</text><text x="362" y="124" fill="#3f7a4a">True</text>
+    <rect x="232" y="132" width="176" height="26" fill="#fbf9f5" stroke="#ddd5c7"/>
+    <text x="246" y="150" fill="#1c1a17">False</text><text x="298" y="150" fill="#1c1a17">False</text><text x="362" y="150" fill="#a33">False</text>
+
+    <text x="454" y="18" font-family="Inter,sans-serif" font-size="12" font-weight="600" fill="#7a3b2e">not A</text>
+    <rect x="454" y="28" width="176" height="26" fill="#f0eee7" stroke="#ddd5c7"/>
+    <text x="468" y="46" fill="#4a453e">A</text><text x="562" y="46" fill="#4a453e">result</text>
+    <rect x="454" y="54" width="176" height="26" fill="#fbf9f5" stroke="#ddd5c7"/>
+    <text x="468" y="72" fill="#1c1a17">True</text><text x="562" y="72" fill="#a33">False</text>
+    <rect x="454" y="80" width="176" height="26" fill="#fbf9f5" stroke="#ddd5c7"/>
+    <text x="468" y="98" fill="#1c1a17">False</text><text x="562" y="98" fill="#3f7a4a">True</text>
+  </g>
+  <text x="320" y="192" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" fill="#7c7469">The only row where "and" is true, and the only row where "or" is false, are the extremes.</text>
+</svg>
+<figcaption>Both operators have exactly one interesting row. Everything else follows from that.</figcaption>
+</figure>
+
+<pre><code>order_value    <span class="o">=</span> <span class="n">642.50</span>
+destination    <span class="o">=</span> <span class="s">"GB"</span>
+account_age_days <span class="o">=</span> <span class="n">3</span>
+
+free_shipping <span class="o">=</span> order_value <span class="o">&gt;=</span> <span class="n">500</span> <span class="k">and</span> destination <span class="o">==</span> <span class="s">"GB"</span>
+needs_review  <span class="o">=</span> account_age_days <span class="o">&lt;</span> <span class="n">7</span> <span class="k">or</span> order_value <span class="o">&gt;</span> <span class="n">1000</span>
+is_domestic   <span class="o">=</span> <span class="k">not</span> destination <span class="o">!=</span> <span class="s">"GB"</span>   <span class="c"># awkward — see below</span>
+
+<span class="f">print</span>(free_shipping, needs_review, is_domestic)</code></pre>
+<div class="out">True True True</div>
+
+<p>That third line is deliberately bad. <code>not destination != "GB"</code> is a double negative — "it is not the case that the destination is not GB" — and a reader has to unwind it. Write <code>destination == "GB"</code>. <strong>Reach for <code>not</code> when it makes a condition clearer, not when it makes one longer.</strong></p>
+
+<h3>Precedence</h3>
+
+<p><code>not</code> binds tightest, then <code>and</code>, then <code>or</code>. So this:</p>
+
+<pre><code>flagged <span class="o">=</span> is_new_account <span class="k">and</span> value <span class="o">&gt;</span> <span class="n">1000</span> <span class="k">or</span> is_restricted</code></pre>
+
+<p>means <code>(is_new_account and value &gt; 1000) or is_restricted</code> — which may or may not be what you meant. <strong>Use parentheses whenever <code>and</code> and <code>or</code> appear in the same expression.</strong> Not because Python needs them, but because the reader does, and because the version you meant and the version you wrote produce different decisions on real orders.</p>
+
+<h3>The error that produces no error</h3>
+
+<div class="aside warn">
+  <span class="label">Read this one twice</span>
+  <p>To check whether a country is one of several, the English sentence is "if the destination is GB or IE or FR". Translated literally:</p>
+  <pre style="margin:0.8rem 0"><code><span class="k">if</span> destination <span class="o">==</span> <span class="s">"GB"</span> <span class="k">or</span> <span class="s">"IE"</span> <span class="k">or</span> <span class="s">"FR"</span><span class="o">:</span></code></pre>
+  <p style="margin-bottom:0.4rem">This runs, raises nothing, and is <strong>always true for every destination on earth.</strong> Python reads it as <code>(destination == "GB") or ("IE") or ("FR")</code> — and a non-empty string is truthy (§3), so the moment the first test fails the second operand <code>"IE"</code> is evaluated, found truthy, and the whole thing is true.</p>
+  <p style="margin-bottom:0">Every comparison needs its own left-hand side: <code>destination == "GB" or destination == "IE"</code>. A cleaner tool for this arrives with collections; for now, spell it out.</p>
+</div>
+
+<h3>Short-circuit evaluation</h3>
+
+<p>Python stops evaluating a boolean expression the moment the answer is certain.</p>
+
+<ul>
+  <li>In <code>A and B</code>, if <code>A</code> is false the result must be false, so <strong><code>B</code> is never evaluated</strong>.</li>
+  <li>In <code>A or B</code>, if <code>A</code> is true the result must be true, so <strong><code>B</code> is never evaluated</strong>.</li>
+</ul>
+
+<p>This is not merely an optimisation — it is a tool. It lets you put a guard first and something unsafe second, knowing the unsafe part only runs when the guard allows it:</p>
+
+<pre><code>raw_discount <span class="o">=</span> <span class="s">""</span>            <span class="c"># the feed left this blank</span>
+
+has_discount <span class="o">=</span> raw_discount <span class="o">!=</span> <span class="s">""</span> <span class="k">and</span> <span class="f">float</span>(raw_discount) <span class="o">&gt;</span> <span class="n">0</span>
+<span class="f">print</span>(has_discount)</code></pre>
+<div class="out">False</div>
+
+<p><code>float("")</code> raises <code>ValueError</code>. It does not here, because the left side is false and Python never reaches the right side. Reverse the order and the program crashes. <strong>Order matters in a boolean expression</strong>, which is not true of ordinary arithmetic and catches people out.</p>
+
+<h2>3. Truthiness</h2>
+
+<p>Python lets you use non-boolean values where a condition is expected. Every value is either <strong>truthy</strong> or <strong>falsy</strong>.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>A value is <span class="term">falsy</span> if Python treats it as false in a boolean context. The complete list of falsy values from the types taught so far: <code>False</code>, <code>None</code>, <code>0</code>, <code>0.0</code>, and the empty string <code>""</code>. <strong>Everything else is truthy</strong> — including <code>"0"</code>, <code>"False"</code>, and <code>-1</code>.</p>
+</div>
+
+<pre><code><span class="f">print</span>(<span class="f">bool</span>(<span class="n">0</span>), <span class="f">bool</span>(<span class="n">0.0</span>), <span class="f">bool</span>(<span class="s">""</span>), <span class="f">bool</span>(<span class="k">None</span>))
+<span class="f">print</span>(<span class="f">bool</span>(<span class="n">1</span>), <span class="f">bool</span>(<span class="o">-</span><span class="n">1</span>), <span class="f">bool</span>(<span class="s">"0"</span>), <span class="f">bool</span>(<span class="s">"False"</span>))</code></pre>
+<div class="out">False False False False
+True True True True</div>
+
+<p>The second line is where the danger lives. <code>"0"</code> is a non-empty string, so it is truthy — even though the thing it represents is zero. A feed sending <code>"0"</code> for a discount will pass a naive truthiness check. This is the Chapter 1 lesson again: <strong>text that looks like a number is not a number</strong>, and here it does not even fail loudly.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p><span class="term"><code>bool(x)</code></span> is a built-in function that converts any value to <code>True</code> or <code>False</code> using the rules above. It sits alongside <code>int()</code>, <code>float()</code> and <code>str()</code> from Chapter 1 as the fourth type-conversion function.</p>
+</div>
+
+<p>Truthiness is idiomatic for checking whether something was supplied at all:</p>
+
+<pre><code>customer_note <span class="o">=</span> <span class="s">""</span>
+
+<span class="k">if</span> customer_note<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"Note attached."</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"No note."</span>)</code></pre>
+<div class="out">No note.</div>
+
+<p>Writing <code>if customer_note != "":</code> would work identically. The short form is preferred Python — but only where "empty" and "false" genuinely mean the same thing for that value. For a numeric field where <code>0</code> is a legitimate value, <code>if quantity:</code> is a bug waiting to happen, because a real quantity of zero is indistinguishable from a missing one. There, be explicit: <code>if quantity != 0:</code> or <code>if quantity is not None:</code>.</p>
+
+<h3><code>==</code> versus <code>is</code></h3>
+
+<p>Chapter 1 established that a name is a label attached to an object. That gives two different questions you might ask about two names.</p>
+
+<ul>
+  <li><code>a == b</code> — "do these have the same <strong>value</strong>?"</li>
+  <li><code>a is b</code> — "are these the <strong>same object</strong>?"</li>
+</ul>
+
+<p>Almost always you want <code>==</code>. The exception, and the one you will use constantly, is <code>None</code>:</p>
+
+<pre><code>weight_kg <span class="o">=</span> <span class="k">None</span>          <span class="c"># the supplier left it blank</span>
+
+<span class="f">print</span>(weight_kg <span class="k">is</span> <span class="k">None</span>)
+<span class="f">print</span>(weight_kg <span class="k">is not</span> <span class="k">None</span>)</code></pre>
+<div class="out">True
+False</div>
+
+<p><strong>Always test for <code>None</code> with <code>is None</code> and <code>is not None</code>, never with <code>==</code>.</strong> The reason is concrete: only one <code>None</code> object exists in a running Python program, so identity is exactly the right question — and unlike <code>==</code>, <code>is</code> cannot be redefined by a custom type to lie about the answer. This is a firm convention, and code review will flag <code>== None</code>.</p>
+
+<p>Note also that <code>None</code> is not the same as <code>0</code>, nor <code>""</code>, nor <code>False</code>. All four are falsy, but they mean different things: <code>None</code> means "no value was supplied", <code>0</code> means "the value is zero". Collapsing that distinction is how a missing weight becomes a free shipment.</p>
+
+<h2>4. Making the program choose: <code>if</code></h2>
+
+<p>Everything so far produces a <code>bool</code>. This is what acts on one.</p>
+
+<pre><code>order_value <span class="o">=</span> <span class="n">642.50</span>
+
+<span class="k">if</span> order_value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"Free shipping applied."</span>)
+    <span class="f">print</span>(<span class="s">"Dispatching today."</span>)
+
+<span class="f">print</span>(<span class="s">"Order recorded."</span>)</code></pre>
+<div class="out">Free shipping applied.
+Dispatching today.
+Order recorded.</div>
+
+<p>Four pieces of syntax, each doing real work:</p>
+
+<ul>
+  <li><code>if</code> — the keyword.</li>
+  <li><code>order_value &gt;= 500</code> — the <strong>condition</strong>, any expression producing a truthy or falsy value.</li>
+  <li><code>:</code> — the colon, ending the header line. Forgetting it is a <code>SyntaxError</code> and is the single most common typo in Python.</li>
+  <li>The <strong>indented block</strong> beneath — the statements that run when the condition is true.</li>
+</ul>
+
+<h3>Indentation is the syntax</h3>
+
+<p>This is genuinely new, and it is the thing that most distinguishes Python from the languages it borrowed from. Most languages mark a block with braces and treat indentation as decoration. <strong>Python has no braces. The indentation <em>is</em> the block.</strong></p>
+
+<figure>
+<svg viewBox="0 0 620 190" role="img" aria-label="Diagram showing which lines belong to an if block based on indentation">
+  <g font-family="JetBrains Mono,monospace" font-size="12.5">
+    <text x="20" y="30" fill="#1c1a17">order_value = 642.50</text>
+    <text x="20" y="56" fill="#1c1a17">if order_value &gt;= 500:</text>
+    <text x="52" y="82" fill="#1c1a17">print("Free shipping applied.")</text>
+    <text x="52" y="108" fill="#1c1a17">print("Dispatching today.")</text>
+    <text x="20" y="140" fill="#1c1a17">print("Order recorded.")</text>
+  </g>
+  <rect x="44" y="66" width="300" height="52" fill="none" stroke="#7a3b2e" stroke-width="1.6" stroke-dasharray="4 3" rx="4"/>
+  <text x="360" y="88" font-family="Inter,sans-serif" font-size="11.5" fill="#7a3b2e">inside the block —</text>
+  <text x="360" y="104" font-family="Inter,sans-serif" font-size="11.5" fill="#7a3b2e">runs only if true</text>
+  <line x1="16" y1="130" x2="330" y2="130" stroke="#ddd5c7" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="360" y="144" font-family="Inter,sans-serif" font-size="11.5" fill="#7c7469">back to column 0 —</text>
+  <text x="360" y="160" font-family="Inter,sans-serif" font-size="11.5" fill="#7c7469">always runs</text>
+  <line x1="44" y1="66" x2="44" y2="118" stroke="#7a3b2e" stroke-width="2.5"/>
+  <text x="20" y="176" font-family="Inter,sans-serif" font-size="11" fill="#a8a196">The indent level, and nothing else, decides membership.</text>
+</svg>
+<figcaption>Un-indenting a line removes it from the block. There is no closing marker to forget — and no way to have the indentation disagree with the logic, which is the point.</figcaption>
+</figure>
+
+<p>The rules:</p>
+
+<ul>
+  <li><strong>Four spaces per level.</strong> This is near-universal convention, not a language requirement, but deviating from it marks code as foreign.</li>
+  <li><strong>Never mix tabs and spaces.</strong> Python raises <code>TabError</code>. Configure your editor to insert spaces and forget the problem exists.</li>
+  <li><strong>Every line in a block must be indented the same amount.</strong> Inconsistency is an <code>IndentationError</code>.</li>
+  <li><strong>A block cannot be empty.</strong> If you genuinely want nothing to happen, write <code>pass</code> — a statement that exists solely to do nothing and satisfy the syntax.</li>
+</ul>
+
+<h3><code>else</code> and <code>elif</code></h3>
+
+<pre><code>order_value <span class="o">=</span> <span class="n">120.00</span>
+
+<span class="k">if</span> order_value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+    shipping <span class="o">=</span> <span class="n">0.00</span>
+<span class="k">elif</span> order_value <span class="o">&gt;=</span> <span class="n">100</span><span class="o">:</span>
+    shipping <span class="o">=</span> <span class="n">3.95</span>
+<span class="k">elif</span> order_value <span class="o">&gt;=</span> <span class="n">25</span><span class="o">:</span>
+    shipping <span class="o">=</span> <span class="n">5.95</span>
+<span class="k">else</span><span class="o">:</span>
+    shipping <span class="o">=</span> <span class="n">7.95</span>
+
+<span class="f">print</span>(<span class="s">f"Shipping: £</span>{shipping<span class="o">:</span>.2f}<span class="s">"</span>)</code></pre>
+<div class="out">Shipping: £3.95</div>
+
+<p><code>elif</code> is short for "else if". The chain has one property that is the whole reason to use it: <strong>the conditions are tested in order, and the first true one wins. Every branch after it is skipped, whether or not it would also have been true.</strong></p>
+
+<p>Here <code>120.00</code> satisfies both <code>&gt;= 100</code> and <code>&gt;= 25</code>. Only the first runs. That mutual exclusivity is what makes a band structure work, and it means <strong>the order of your branches is part of the logic, not a stylistic choice</strong>. Reverse the two middle branches and every order between £100 and £500 is silently charged the wrong amount — with no error, and a test suite that only checks a £600 order would never notice.</p>
+
+<div class="demo">
+  <div class="label">Trace the chain</div>
+  <div id="chainDemo"></div>
+  <div style="margin-top:1rem">
+    <button data-v="600">£600 order</button>
+    <button data-v="120">£120 order</button>
+    <button data-v="40">£40 order</button>
+    <button data-v="10">£10 order</button>
+  </div>
+</div>
+
+<p><code>else</code> is the catch-all: it takes no condition and runs when every preceding test failed. It is optional — but leaving it out means that when nothing matches, <em>nothing happens</em>, which is rarely what you want and is a common source of "the value just never got set" bugs.</p>
+
+<h3>Independent <code>if</code>s are a different thing entirely</h3>
+
+<p>Compare these two, which look similar and behave completely differently:</p>
+
+<pre><code><span class="c"># A chain: at most ONE branch runs.</span>
+<span class="k">if</span> value <span class="o">&gt;</span> <span class="n">1000</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"High value"</span>)
+<span class="k">elif</span> is_new_account<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"New account"</span>)
+
+<span class="c"># Separate statements: BOTH can run.</span>
+<span class="k">if</span> value <span class="o">&gt;</span> <span class="n">1000</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"High value"</span>)
+<span class="k">if</span> is_new_account<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"New account"</span>)</code></pre>
+
+<p>Choosing between them is a real decision about your problem. Use a chain when the cases are <strong>alternatives</strong> — an order sits in exactly one shipping band. Use separate <code>if</code>s when the checks are <strong>independent</strong> — an order can be both high-value and from a new account, and you want both flags raised.</p>
+
+<h3>Nesting, and why to avoid it</h3>
+
+<p>A block can contain another <code>if</code>. It quickly stops being readable:</p>
+
+<pre><code><span class="k">if</span> destination <span class="o">==</span> <span class="s">"GB"</span><span class="o">:</span>
+    <span class="k">if</span> order_value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+        <span class="k">if</span> account_age_days <span class="o">&gt;=</span> <span class="n">7</span><span class="o">:</span>
+            <span class="f">print</span>(<span class="s">"Free shipping"</span>)</code></pre>
+
+<p>Three levels deep to express one decision. Since all three must hold, combine them:</p>
+
+<pre><code><span class="k">if</span> destination <span class="o">==</span> <span class="s">"GB"</span> <span class="k">and</span> order_value <span class="o">&gt;=</span> <span class="n">500</span> <span class="k">and</span> account_age_days <span class="o">&gt;=</span> <span class="n">7</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"Free shipping"</span>)</code></pre>
+
+<p>Better still when the condition grows, name it — the name documents the rule, and the <code>if</code> becomes readable at a glance:</p>
+
+<pre><code>is_domestic     <span class="o">=</span> destination <span class="o">==</span> <span class="s">"GB"</span>
+is_large_order  <span class="o">=</span> order_value <span class="o">&gt;=</span> <span class="n">500</span>
+is_established  <span class="o">=</span> account_age_days <span class="o">&gt;=</span> <span class="n">7</span>
+
+<span class="k">if</span> is_domestic <span class="k">and</span> is_large_order <span class="k">and</span> is_established<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"Free shipping"</span>)</code></pre>
+
+<p>Nesting is sometimes genuinely necessary — when the inner question only makes sense if the outer one held. But <strong>reach for it last, not first.</strong> Deeply nested conditionals are among the most reliable sources of logic bugs in real codebases, because no reader can hold four levels of context at once.</p>
+
+<h2>5. Choosing a value: the conditional expression</h2>
+
+<p>Often a branch exists only to set one name to one of two values:</p>
+
+<pre><code><span class="k">if</span> order_value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+    shipping_label <span class="o">=</span> <span class="s">"FREE"</span>
+<span class="k">else</span><span class="o">:</span>
+    shipping_label <span class="o">=</span> <span class="s">"STANDARD"</span></code></pre>
+
+<p>Python has a compact form for exactly this, called a <strong>conditional expression</strong> (or, informally, a ternary):</p>
+
+<pre><code>shipping_label <span class="o">=</span> <span class="s">"FREE"</span> <span class="k">if</span> order_value <span class="o">&gt;=</span> <span class="n">500</span> <span class="k">else</span> <span class="s">"STANDARD"</span></code></pre>
+
+<p>Read it in the order written: <em>this value</em>, if <em>condition</em>, otherwise <em>that value</em>. The condition sits in the middle, which is unusual — most languages put it first — but it makes the common case read like a sentence.</p>
+
+<p>Because it is an <strong>expression</strong>, it produces a value and can be used anywhere a value fits, including directly inside an f-string:</p>
+
+<pre><code><span class="f">print</span>(<span class="s">f"Shipping: </span>{<span class="s">'FREE'</span> <span class="k">if</span> order_value <span class="o">&gt;=</span> <span class="n">500</span> <span class="k">else</span> <span class="s">'STANDARD'</span>}<span class="s">"</span>)</code></pre>
+
+<p>Use it when the choice is short and the alternatives are simple values. Do not use it when either branch needs real work, or when nesting one inside another — <code>"A" if x else ("B" if y else "C")</code> is where readability dies, and an <code>if</code>/<code>elif</code>/<code>else</code> chain is clearer.</p>
+
+<h2>6. Checking whether text contains something: <code>in</code></h2>
+
+<p>One more operator, because order validation constantly needs it.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>The <span class="term"><code>in</code></span> operator, used with two strings, asks whether the left string appears anywhere inside the right one, and returns a <code>bool</code>. <code>not in</code> asks the opposite. The check is case-sensitive and matches any position, not just the start.</p>
+</div>
+
+<pre><code>email <span class="o">=</span> <span class="s">"mike@example.com"</span>
+
+<span class="f">print</span>(<span class="s">"@"</span> <span class="k">in</span> email)
+<span class="f">print</span>(<span class="s">"@"</span> <span class="k">not in</span> email)
+<span class="f">print</span>(<span class="s">"Example"</span> <span class="k">in</span> email)   <span class="c"># case-sensitive</span></code></pre>
+<div class="out">True
+False
+False</div>
+
+<p><code>in</code> also works with other kinds of container — lists, dictionaries, sets — where it answers "is this a member?" rather than "is this a substring". Those arrive in their own chapters. For now, treat it as a substring test.</p>
+
+<div class="aside">
+  <span class="label">Deliberately deferred</span>
+  Two things that belong to this topic and are coming later. <strong>The <code>match</code> statement</strong> (Python 3.10+) handles multi-way dispatch on the <em>shape</em> of data, and is genuinely better than a long <code>elif</code> chain for some problems — it needs data structures you have not met, so it waits. <strong><code>if x in (a, b, c)</code></strong>, the clean way to test membership of several options, needs tuples — that is the very next chapter's territory. Until then, spell out the comparisons.
+</div>
+
+<h2>Worked examples</h2>
+
+<div class="example">
+<div class="label">Example 1</div>
+<h3>Shipping bands</h3>
+
+<p><strong>The problem.</strong> Charge shipping by order value: free over £500, £3.95 from £100, £5.95 from £25, £7.95 below that. Print the band and the charge.</p>
+
+<p><strong>Thinking it through.</strong> The bands are alternatives — an order sits in exactly one — so this is an <code>elif</code> chain, not separate <code>if</code>s. The ordering question settles itself once you notice that £600 satisfies <em>every</em> threshold: only a descending chain gives the right answer, because the first match wins.</p>
+
+<pre><code><span class="c"># Shipping charge for one order.</span>
+
+order_value <span class="o">=</span> <span class="n">120.00</span>
+
+<span class="k">if</span> order_value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+    band <span class="o">=</span> <span class="s">"FREE"</span>
+    shipping <span class="o">=</span> <span class="n">0.00</span>
+<span class="k">elif</span> order_value <span class="o">&gt;=</span> <span class="n">100</span><span class="o">:</span>
+    band <span class="o">=</span> <span class="s">"STANDARD"</span>
+    shipping <span class="o">=</span> <span class="n">3.95</span>
+<span class="k">elif</span> order_value <span class="o">&gt;=</span> <span class="n">25</span><span class="o">:</span>
+    band <span class="o">=</span> <span class="s">"SMALL"</span>
+    shipping <span class="o">=</span> <span class="n">5.95</span>
+<span class="k">else</span><span class="o">:</span>
+    band <span class="o">=</span> <span class="s">"MINIMUM"</span>
+    shipping <span class="o">=</span> <span class="n">7.95</span>
+
+<span class="f">print</span>(<span class="s">f"Band:     </span>{band}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Shipping: £</span>{shipping<span class="o">:</span>.2f}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Total:    £</span>{order_value <span class="o">+</span> shipping<span class="o">:</span>,.2f}<span class="s">"</span>)</code></pre>
+<div class="out">Band:     STANDARD
+Shipping: £3.95
+Total:    £123.95</div>
+
+<p><strong>Why set two names in each branch rather than printing there?</strong> Because the printing is the same in every case — only the values differ. Assigning in the branch and printing once afterwards means the output format is written once. If it printed inside each branch, changing the format would mean four edits and three chances to miss one.</p>
+
+<p><strong>Why <code>else</code> rather than <code>elif order_value &lt; 25</code>?</strong> They behave identically here, but <code>else</code> is provably exhaustive — it is impossible for a value to fall through and leave <code>band</code> unset. With a final <code>elif</code>, a future edit to the thresholds could open a gap, and the failure would be a <code>NameError</code> three lines later rather than an obvious wrong answer.</p>
+</div>
+
+<div class="example">
+<div class="label">Example 2</div>
+<h3>Validating an order before it is accepted</h3>
+
+<p><strong>The problem.</strong> Before an order is accepted, check it: the email must contain an <code>@</code>, the quantity must be a positive whole number, and the destination must be one we ship to (GB, IE, FR). Report the <em>first</em> problem found, or accept it.</p>
+
+<p><strong>Thinking it through.</strong> "Report the first problem" is the signal for a chain, not independent <code>if</code>s — once one check fails, the rest are irrelevant. This structure is worth recognising: a sequence of guards, each rejecting for a specific reason, with acceptance as the final <code>else</code>.</p>
+
+<p>The quantity arrives as text, so it must be converted before comparison — otherwise <code>"3" &gt; 0</code> raises <code>TypeError</code>. And the destination check needs each comparison spelled out in full, per the trap in §2.</p>
+
+<pre><code><span class="c"># Order validation. Reports the first failure only.</span>
+
+email        <span class="o">=</span> <span class="s">"mike@example.com"</span>
+raw_quantity <span class="o">=</span> <span class="s">"3"</span>
+destination  <span class="o">=</span> <span class="s">"IE"</span>
+
+quantity <span class="o">=</span> <span class="f">int</span>(raw_quantity)
+
+ships_here <span class="o">=</span> destination <span class="o">==</span> <span class="s">"GB"</span> <span class="k">or</span> destination <span class="o">==</span> <span class="s">"IE"</span> <span class="k">or</span> destination <span class="o">==</span> <span class="s">"FR"</span>
+
+<span class="k">if</span> <span class="s">"@"</span> <span class="k">not in</span> email<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"REJECTED: email address is not valid"</span>)
+<span class="k">elif</span> quantity <span class="o">&lt;=</span> <span class="n">0</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"REJECTED: quantity must be at least 1"</span>)
+<span class="k">elif</span> <span class="k">not</span> ships_here<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f"REJECTED: we do not ship to </span>{destination}<span class="s">"</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f"ACCEPTED: </span>{quantity}<span class="s"> units to </span>{destination}<span class="s">"</span>)</code></pre>
+<div class="out">ACCEPTED: 3 units to IE</div>
+
+<p><strong>Why name <code>ships_here</code> instead of putting it in the <code>elif</code>?</strong> The condition is three comparisons long. Inline, the <code>elif</code> line becomes unreadable and the reason for the rejection is buried in mechanics. Named, the <code>elif</code> reads as <code>not ships_here</code> — which is exactly the English sentence.</p>
+
+<p><strong>Why is <code>ships_here</code> computed before the chain, even though it is only used in the third branch?</strong> A fair objection: it is computed even when the email check already failed. That is a real, if tiny, waste — and it is the right trade here, because the alternative buries a three-part condition inside a branch. Legibility beats a few nanoseconds. When the wasted work is <em>expensive</em> — a network call, a large computation — the calculus flips, and short-circuiting becomes the tool.</p>
+</div>
+
+<div class="example">
+<div class="label">Example 3 · integrating</div>
+<h3>Routing an order for fraud review</h3>
+
+<p><strong>The problem.</strong> Score an order for risk and decide its route. Add 30 points if the account is under 7 days old, 25 if the order exceeds £1,000, 20 if the billing and shipping countries differ, and 15 if there is no phone number on file. Score 50 or more holds the order; 25 to 49 flags it for manual review; below 25 ships it. Report the route, the score, and the total charged.</p>
+
+<p><strong>Thinking it through.</strong> Two structures, and recognising that they are different is the whole exercise.</p>
+
+<p>The risk factors are <strong>independent</strong> — an order can trip all four — so they are separate <code>if</code> statements accumulating into a running total, not a chain. The routing decision is <strong>alternatives</strong> — exactly one route applies — so that is a chain. Using a chain for the first would score only the highest-priority factor and silently under-detect fraud.</p>
+
+<p>The missing phone number is <code>None</code>, not <code>""</code> — the field exists in the schema but was never filled — so it is tested with <code>is None</code> per §3.</p>
+
+<pre><code><span class="c"># Fraud risk routing for a single order.</span>
+
+raw_order_value  <span class="o">=</span> <span class="s">"1240.00"</span>
+account_age_days <span class="o">=</span> <span class="n">3</span>
+billing_country  <span class="o">=</span> <span class="s">"GB"</span>
+shipping_country <span class="o">=</span> <span class="s">"DE"</span>
+phone_number     <span class="o">=</span> <span class="k">None</span>
+
+order_value <span class="o">=</span> <span class="f">float</span>(raw_order_value)
+
+<span class="c"># Independent factors — any combination can apply, so they accumulate.</span>
+risk_score <span class="o">=</span> <span class="n">0</span>
+
+<span class="k">if</span> account_age_days <span class="o">&lt;</span> <span class="n">7</span><span class="o">:</span>
+    risk_score <span class="o">+=</span> <span class="n">30</span>
+<span class="k">if</span> order_value <span class="o">&gt;</span> <span class="n">1000</span><span class="o">:</span>
+    risk_score <span class="o">+=</span> <span class="n">25</span>
+<span class="k">if</span> billing_country <span class="o">!=</span> shipping_country<span class="o">:</span>
+    risk_score <span class="o">+=</span> <span class="n">20</span>
+<span class="k">if</span> phone_number <span class="k">is</span> <span class="k">None</span><span class="o">:</span>
+    risk_score <span class="o">+=</span> <span class="n">15</span>
+
+<span class="c"># Alternatives — exactly one route applies, so this is a chain.</span>
+<span class="k">if</span> risk_score <span class="o">&gt;=</span> <span class="n">50</span><span class="o">:</span>
+    route <span class="o">=</span> <span class="s">"HOLD"</span>
+<span class="k">elif</span> risk_score <span class="o">&gt;=</span> <span class="n">25</span><span class="o">:</span>
+    route <span class="o">=</span> <span class="s">"REVIEW"</span>
+<span class="k">else</span><span class="o">:</span>
+    route <span class="o">=</span> <span class="s">"SHIP"</span>
+
+shipping <span class="o">=</span> <span class="n">0.00</span> <span class="k">if</span> order_value <span class="o">&gt;=</span> <span class="n">500</span> <span class="k">else</span> <span class="n">7.95</span>
+
+<span class="f">print</span>(<span class="s">f"Risk score: </span>{risk_score}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Route:      </span>{route}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Charged:    £</span>{order_value <span class="o">+</span> shipping<span class="o">:</span>,.2f}<span class="s">"</span>)</code></pre>
+<div class="out">Risk score: 90
+Route:      HOLD
+Charged:    £1,240.00</div>
+
+<p><strong>Why <code>risk_score = 0</code> before the checks?</strong> Because <code>risk_score += 30</code> means "take the current value and add 30" — there must <em>be</em> a current value. Without the initialisation the first <code>+=</code> raises <code>NameError</code>. Starting an accumulator at its identity value before adding to it is a pattern you will use constantly.</p>
+
+<p><strong>Why <code>phone_number is None</code> and not <code>not phone_number</code>?</strong> They agree here, but they mean different things. <code>not phone_number</code> would also be true for the empty string <code>""</code> — a phone field that was submitted blank rather than never filled. Those may warrant different handling, and collapsing them throws information away. Say what you mean.</p>
+
+<p><strong>Why is the shipping charge a conditional expression rather than a fourth branch?</strong> It is a two-way choice between two simple values, assigned to one name — exactly the case the form exists for. Had there been four shipping bands, the chain from Example 1 would be right instead.</p>
+</div>
+
+<h2>What this chapter established</h2>
+
+<ul>
+  <li>Comparison operators produce <code>bool</code> values and can be named, printed and combined like any other value.</li>
+  <li><code>==</code> asks about equality; <code>=</code> binds a name. Ordering across incompatible types is a <code>TypeError</code>; equality across them is just <code>False</code>.</li>
+  <li>Strings compare case-sensitively and lexicographically; computed floats must never be compared with <code>==</code>.</li>
+  <li><code>and</code>, <code>or</code>, <code>not</code>, their truth tables, their precedence, and short-circuit evaluation as a guarding tool.</li>
+  <li><code>x == "A" or "B"</code> is always true and is the most dangerous line in this chapter.</li>
+  <li>Truthiness: <code>False</code>, <code>None</code>, <code>0</code>, <code>0.0</code>, <code>""</code> are falsy; everything else — including <code>"0"</code> — is truthy.</li>
+  <li><code>is None</code> and <code>is not None</code> for absence; <code>==</code> for everything else.</li>
+  <li><code>if</code>/<code>elif</code>/<code>else</code>, indentation as syntax, first-match-wins, and the difference between a chain and independent <code>if</code>s.</li>
+  <li>Conditional expressions for two-way value selection; <code>in</code> for substring tests.</li>
+</ul>
+
+<p>Everything the exercise set requires is above, together with Chapter 1. If something appears to need a tool that has not been taught, check <code>syllabus_map.md</code> — if it is not listed, that is a syllabus gap, and it should be flagged rather than worked around.</p>
+
+<nav class="chapter-foot">
+  <a href="../chapter_01_product_feed/content.html" class="prv"><span class="dir">Previous</span>← Chapter 1</a>
+  <a href="exercises.html" class="nxt"><span class="dir">Next</span>Exercises →</a>
+</nav>
+
+</main>
+
+<script>
+(function () {
+  var bands = [
+    { test: "order_value >= 500", label: "FREE",     ship: "0.00" },
+    { test: "order_value >= 100", label: "STANDARD", ship: "3.95" },
+    { test: "order_value >= 25",  label: "SMALL",    ship: "5.95" },
+    { test: "else",               label: "MINIMUM",  ship: "7.95" }
+  ];
+  var host = document.getElementById("chainDemo");
+
+  function render(v) {
+    var thresholds = [500, 100, 25, null], taken = -1, html = "";
+    for (var i = 0; i < bands.length; i++) {
+      var t = thresholds[i];
+      var passes = (t === null) ? true : (v >= t);
+      var state;
+      if (taken !== -1) state = "skipped";
+      else if (passes) { state = "taken"; taken = i; }
+      else state = "failed";
+
+      var bg = state === "taken" ? "#7a3b2e" : "transparent";
+      var fg = state === "taken" ? "#fbf9f5" : (state === "failed" ? "#8d867a" : "#c2bbb0");
+      var mark = state === "taken" ? "✓ first match — this branch runs"
+               : state === "failed" ? "✗ false, move on"
+               : "— never tested";
+      var kw = i === 0 ? "if" : (i === 3 ? "else" : "elif");
+      html += '<div style="display:flex;gap:12px;align-items:baseline;padding:5px 9px;border-radius:3px;background:' + bg + ';color:' + fg + '">'
+           + '<code style="background:none;border:none;color:inherit;font-size:12px;min-width:210px">'
+           + kw + (t === null ? "" : " order_value >= " + t) + ':</code>'
+           + '<span style="font-family:Inter,sans-serif;font-size:11.5px">' + mark + '</span></div>';
+    }
+    var b = bands[taken];
+    host.innerHTML =
+      '<div style="font-family:Inter,sans-serif;font-size:12.5px;color:#7c7469;margin-bottom:9px">order_value = <strong style="color:#1c1a17">' + v.toFixed(2) + '</strong></div>'
+      + '<div style="font-family:JetBrains Mono,monospace;line-height:1.85">' + html + '</div>'
+      + '<div style="font-family:Inter,sans-serif;font-size:13px;color:#4a453e;border-top:1px solid #ddd5c7;padding-top:11px;margin-top:11px">'
+      + 'Band <strong>' + b.label + '</strong>, shipping <strong>£' + b.ship + '</strong>. '
+      + 'Notice how many later branches would also have been true — and were never reached.</div>';
+  }
+
+  var btns = document.querySelectorAll("#chainDemo ~ div button, .demo button[data-v]");
+  for (var i = 0; i < btns.length; i++) {
+    (function (b) {
+      b.onclick = function () { render(parseFloat(b.getAttribute("data-v"))); };
+    })(btns[i]);
+  }
+  render(600);
+})();
+</script>
+</body>
+</html>

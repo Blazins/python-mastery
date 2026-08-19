@@ -4,7 +4,7 @@ Running index of every concept, function, and structure **formally taught** so f
 If something feels unfamiliar during an exercise and it is not listed here, that is
 a syllabus gap, not a personal one — flag it.
 
-Last updated: after Chapter 1.
+Last updated: after Chapter 2.
 
 ---
 
@@ -60,6 +60,43 @@ Last updated: after Chapter 1.
 - Reading a traceback bottom-up
 - `NameError`, `TypeError`, `ValueError`, `SyntaxError`
 
+### Chapter 2 — Deciding What to Do With an Order
+
+**Comparison**
+- `==` `!=` `<` `>` `<=` `>=` — produce `bool`, usable as values
+- `=` (binds) versus `==` (asks) — the latter is an expression
+- Equality across types is `False`, not an error; ordering across types is `TypeError`
+- `500 == 500.0` is `True`; `500 == "500"` is `False`
+- String comparison: lexicographic by character code, case-sensitive; uppercase sorts before lowercase
+- Never compare computed floats with `==`; compare `abs(a - b) < tolerance`
+- `abs(x)` — built-in, distance from zero
+- Chained comparisons: `100 <= x <= 500`
+
+**Boolean logic**
+- `and`, `or`, `not` and their truth tables
+- Precedence: `not` > `and` > `or`; parenthesise when mixed
+- `x == "A" or "B"` is always true — the always-true-or trap
+- Short-circuit evaluation, and using it as a guard
+
+**Truthiness**
+- Falsy: `False`, `None`, `0`, `0.0`, `""`. Everything else truthy, including `"0"`
+- `bool(x)` — fourth conversion function alongside `int()`, `float()`, `str()`
+- `if value:` idiom, and when it is wrong (numeric fields where 0 is legitimate)
+- `is` versus `==`; `is None` / `is not None` as firm convention
+- `None` versus `0` versus `""` versus `False` — all falsy, different meanings
+
+**Branching**
+- `if` / `elif` / `else`; the colon; the indented block
+- Indentation as syntax: 4 spaces, no tabs, `TabError`, `IndentationError`
+- `pass` for a deliberately empty block
+- First match wins; branch order is part of the logic
+- Chain (alternatives) versus separate `if`s (independent) — and why it matters
+- Nesting, and flattening it with `and` or named conditions
+
+**Other**
+- Conditional expression: `A if cond else B`
+- `in` / `not in` for substring tests (case-sensitive, any position)
+
 ---
 
 ## Known siblings, deliberately deferred
@@ -69,10 +106,10 @@ These exist, are real, and are coming — they are not gaps.
 | Concept | Sibling tools not yet taught | Planned for |
 |---------|------------------------------|-------------|
 | Money arithmetic | `decimal.Decimal`; integer-pennies as a standing pattern | Modules chapter (Decimal); pennies pattern introduced informally in Ch.1 Ex.6 |
-| Comparison | `==` `!=` `<` `>` `<=` `>=` | Chapter 2 |
-| Boolean logic | `and`, `or`, `not`, truthiness of non-bool values | Chapter 2 |
-| Branching | `if` / `elif` / `else` | Chapter 2 |
 | Repetition | `for`, `while`, `break`, `continue` | Chapter 3 |
+| Multi-way dispatch | `match` statement (3.10+) | After data structures |
+| Membership of several options | `x in (a, b, c)` | Chapter 3 (tuples) |
+| Float comparison | `math.isclose()` | Modules chapter |
 | String methods | `.strip()`, `.split()`, `.upper()`, `.replace()`, indexing, slicing | Strings chapter |
 | Functions | `def`, parameters, `return`, scope | Functions chapter |
 | Older string formatting | `%` formatting, `str.format()` | Mentioned when f-strings are revisited; f-strings are the modern default |
