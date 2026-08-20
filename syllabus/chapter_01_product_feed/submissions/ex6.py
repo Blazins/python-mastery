@@ -8,48 +8,53 @@ total_pounds = float(raw_till_total)
 total_pennies = total_pounds * 100
 pennies = int(round(total_pennies,0))
 
-denomination_label_50 = "£50"
-denomination_label_20 = "£20"
-denomination_label_10 = "£10"
-denomination_label_5 = "£5"
-denomination_label_1 = "£1"
-denomination_label_50p = "50p"
-denomination_label_20p = "20p"
-denomination_label_10p = "10p"
-denomination_label_5p = "5p"
-denomination_label_2p = "2p"
-denomination_label_1p = "1p"
 
-pounds = pennies//100
-pound_50_denominations = pounds//50
-pound_20_denominations = (pounds%50)//20
-pound_10_denominations = ((pounds%50)%20)//10
-pound_5_denominations = (((pounds%50)%20)%10)//5
-pound_1_denominations = ((((pounds%50)%20)%10)%5)//1
-remaining_pounds = ((((pounds%50)%20)%10)%5)%1
-denominations_50_p = pennies%100//50
-denominations_20_p = (pennies%100%50)//20
-denominations_10_p = ((pennies%100%50)%20)//10
-denominations_5_p = (((pennies%100%50)%20)%10)//5
-denominations_2_p = ((((pennies%100%50)%20)%10)%5)//2
-denominations_1_p = (((((pennies%100%50)%20)%10)%5)%2)//1
+rest = pennies #102686
 
-  
-#print(denominations_50_p)
-#print(pound_1_denominations)
+pound_50_denominations = rest//5000
+rest = rest % 5000
 
-print(f"Till total: £{total_pounds:,}")
+pound_20_denominations = rest//2000
+rest = rest % 2000
+
+pound_10_denominations = rest//1000
+rest = rest % 1000
+
+pound_5_denominations = rest//500
+rest = rest % 500
+
+pound_1_denominations = rest//100
+rest = rest % 100
+
+denominations_50_p = rest//50
+rest = rest % 50
+
+denominations_20_p = rest//20
+rest = rest % 20
+
+denominations_10_p = rest//10
+rest = rest % 10
+
+denominations_5_p = rest//5
+rest = rest % 5
+
+denominations_2_p = rest//2
+rest = rest % 2
+
+denominations_1_p = rest  
+
+print(f"Till total: £{total_pounds:,.2f}")
 print(f"Pennies:    {pennies}")
-print(f"{denomination_label_50:<4} x {pound_50_denominations}")
-print(f"{denomination_label_20:<4} x {pound_20_denominations}")
-print(f"{denomination_label_10:<4} x {pound_10_denominations}")
-print(f"{denomination_label_5:<4} x {pound_5_denominations}")
-print(f"{denomination_label_1:<4} x {pound_1_denominations}")
-print(f"{denomination_label_50p:<4} x {denominations_50_p}")
-print(f"{denomination_label_20p:<4} x {denominations_20_p}")
-print(f"{denomination_label_10p:<4} x {denominations_10_p}")
-print(f"{denomination_label_5p:<4} x {denominations_5_p}")
-print(f"{denomination_label_2p:<4} x {denominations_2_p}")
-print(f"{denomination_label_1p:<4} x {denominations_1_p}")
+print(f"{'£50':<4} x {pound_50_denominations}")
+print(f"{'£20':<4} x {pound_20_denominations}")
+print(f"{'£10':<4} x {pound_10_denominations}")
+print(f"{'£5':<4} x {pound_5_denominations}")
+print(f"{'£1':<4} x {pound_1_denominations}")
+print(f"{'50p':<4} x {denominations_50_p}")
+print(f"{'20p':<4} x {denominations_20_p}")
+print(f"{'10p':<4} x {denominations_10_p}")
+print(f"{'5p':<4} x {denominations_5_p}")
+print(f"{'2p':<4} x {denominations_2_p}")
+print(f"{'1p':<4} x {denominations_1_p}")
 
 
