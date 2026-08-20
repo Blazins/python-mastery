@@ -371,7 +371,24 @@ cost     <span class="o">=</span> <span class="f">float</span>(raw_cost)  <span 
 <div class="out">Product: Blue Mug
 TypeError: can only concatenate str (not "float") to str</div>
 
-<p>You could fix that with <code>str(4.99)</code>. Don't — there is a far better tool.</p>
+<p>You could fix that with <code>str(4.99)</code>. Don't — f-strings, below, are the far better tool.</p>
+
+<h4>Repetition</h4>
+
+<p><code>*</code> between a string and an <code>int</code> repeats that string. This is the same <code>*</code> symbol you met in §6, doing a different job because its operands are a different pair of types — an operator asks its operands what they mean by it, and <code>str * int</code> means "repeat", while <code>int * int</code> means "multiply":</p>
+
+<pre><code><span class="f">print</span>(<span class="s">"-"</span> <span class="o">*</span> <span class="n">40</span>)
+<span class="f">print</span>(<span class="s">"ab"</span> <span class="o">*</span> <span class="n">3</span>)</code></pre>
+<div class="out">----------------------------------------
+ababab</div>
+
+<p>The count may be a name or an expression, and that is the entire point of the operator. A rule beneath a report is not "sixty-six hyphens, counted by hand" — it is "as wide as the columns are". Write the relationship and let Python do the counting:</p>
+
+<pre><code>width <span class="o">=</span> <span class="n">20</span> <span class="o">+</span> <span class="n">5</span> <span class="o">+</span> <span class="n">10</span>
+<span class="f">print</span>(<span class="s">"-"</span> <span class="o">*</span> width)</code></pre>
+<div class="out">-----------------------------------</div>
+
+<p>Three details worth knowing before you need them. The order of the operands does not matter — <code>3 * "ab"</code> and <code>"ab" * 3</code> are identical. A count of <code>0</code> or any negative number produces the empty string <code>""</code> rather than an error, which is usually what you want and occasionally hides a bug. And <code>str * str</code> is a <code>TypeError</code>: repeating a string a "string" number of times is meaningless, so Python refuses rather than guessing.</p>
 
 <h4>f-strings</h4>
 
@@ -389,7 +406,30 @@ qty  <span class="o">=</span> <span class="n">3</span>
 <div class="out">Blue Mug x3 at £4.99
 Line total: £14.969999999999999</div>
 
-<p>Note two things. First, no <code>str()</code> conversion was needed — the f-string handles it. Second, arbitrary expressions work inside the braces, not just names: <code>{cost * qty}</code> did real arithmetic. And third — the float problem from §7 arrived exactly as promised.</p>
+<p>Note three things. First, no <code>str()</code> conversion was needed — the f-string handles it. Second, arbitrary expressions work inside the braces, not just names: <code>{cost * qty}</code> did real arithmetic. And third — the float problem from §7 arrived exactly as promised.</p>
+
+<h4>Literals inside the braces</h4>
+
+<p>"Any expression" in the definition above includes a <em>literal</em> written directly between the braces — a quoted string, a number. On its own this looks pointless: <code>f"{'PRODUCT'}"</code> produces exactly what <code>"PRODUCT"</code> produces, with more typing. It stops being pointless the moment a format specifier is attached, because a specifier can only apply to something inside braces:</p>
+
+<pre><code><span class="f">print</span>(<span class="s">f"</span>{<span class="s">'PRODUCT'</span><span class="o">:</span>&lt;20}{<span class="s">'QTY'</span><span class="o">:</span>&gt;5}<span class="s">"</span>)</code></pre>
+<div class="out">PRODUCT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;QTY</div>
+
+<p>Note the quoting. The f-string itself is delimited by double quotes, so a string literal inside the braces uses single quotes — nesting the same quote character would end the string early. This is why the two quote styles being interchangeable (from the top of §9) turns out to matter.</p>
+
+<p>This is a small mechanism with a large consequence for layout: <strong>it decides which side of the line carries the width.</strong> Consider printing a label and a number together. You can pad the number to whatever width happens to make the columns line up under that particular label:</p>
+
+<pre><code><span class="f">print</span>(<span class="s">f"Full cartons: </span>{full_cartons<span class="o">:</span>&gt;5}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"Loose units: </span>{loose_units<span class="o">:</span>&gt;6}<span class="s">"</span>)</code></pre>
+
+<p>Those widths — <code>5</code> and <code>6</code> — are not facts about the data. They are compensation for the labels being different lengths, arrived at by trial and error. Rename <code>Full cartons</code> to <code>Cartons</code> and the alignment silently breaks, and you retune by hand again. Pad the <em>label</em> instead and the numbers stop caring what the labels are called:</p>
+
+<pre><code><span class="f">print</span>(<span class="s">f"</span>{<span class="s">'Full cartons:'</span><span class="o">:</span>&lt;15}{full_cartons}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">f"</span>{<span class="s">'Loose units:'</span><span class="o">:</span>&lt;15}{loose_units}<span class="s">"</span>)</code></pre>
+<div class="out">Full&nbsp;cartons:&nbsp;&nbsp;12
+Loose&nbsp;units:&nbsp;&nbsp;&nbsp;7</div>
+
+<p>One number, <code>15</code>, stated once, describing the actual layout: "the label column is fifteen characters wide". That is a claim about the report you are designing, not a fudge factor. Prefer the version where every constant in the code means something.</p>
 
 <h4>Format specifiers: fixing that output</h4>
 

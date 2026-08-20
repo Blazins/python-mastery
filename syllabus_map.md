@@ -4,7 +4,8 @@ Running index of every concept, function, and structure **formally taught** so f
 If something feels unfamiliar during an exercise and it is not listed here, that is
 a syllabus gap, not a personal one — flag it.
 
-Last updated: after Chapter 2.
+Last updated: after Chapter 2. Chapter 1 amended 2026-08-20 — string
+repetition and literals-in-braces added after gaps were flagged in the Ch.1 review.
 
 ---
 
@@ -52,7 +53,11 @@ Last updated: after Chapter 2.
 - `print(...)`, multiple arguments, automatic newline
 - Single vs double quotes
 - `+` concatenation; `TypeError` on `str + number`
+- `*` repetition: `"-" * n`; count may be a name or expression; `0`/negative gives
+  `""`; `str * str` is a `TypeError`
 - f-strings: `f"…{expression}…"`
+- Literals inside the braces: `f"{'PRODUCT':<20}"`; quote nesting (single inside
+  double); padding the *label* to a fixed width instead of retuning the number's
 - Format specifiers: `.2f`, `.0f`, `,`, `,.2f`, `>n`, `<n`, `.1%`
 - Rounding (changes the value) vs formatting (changes the display)
 
