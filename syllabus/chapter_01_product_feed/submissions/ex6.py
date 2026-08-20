@@ -9,7 +9,7 @@ total_pennies = total_pounds * 100
 pennies = int(round(total_pennies,0))
 
 
-rest = pennies #102686
+rest = pennies
 
 pound_50_denominations = rest//5000
 rest = rest % 5000
