@@ -76,6 +76,23 @@ def assert_only_taught(name):
         # inside printed text is never mistaken for a keyword.
         code = line.split("#", 1)[0]
         code = re.sub(r'"[^"]*"|\'[^\']*\'', '""', code)
+        # Sequence literals have no keyword to match on, so they need their
+        # own patterns: `x in ("A", "B")` and `x in [1, 2]` are tuple/list
+        # membership, and `[` is only ever a list or a subscript. Neither is
+        # taught until Chapter 3.
+        if re.search(r"\bin\s*[\(\[]", code):
+            pytest.fail(
+                f"{name}: uses membership against a sequence literal "
+                "(`x in (a, b)`), which needs tuples — Chapter 3.\n"
+                f"  {line.strip()!r}\n"
+                "For now, spell the alternatives out: `x == a or x == b`."
+            )
+        if "[" in code:
+            pytest.fail(
+                f"{name}: uses `[`, which means a list or a subscript. "
+                "Neither has been taught yet.\n"
+                f"  {line.strip()!r}"
+            )
         for kw, why in UNTAUGHT.items():
             if re.search(rf"(?<![\w.]){kw}\b", code):
                 pytest.fail(
