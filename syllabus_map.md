@@ -118,6 +118,7 @@ These exist, are real, and are coming — they are not gaps.
 | String methods | `.strip()`, `.split()`, `.upper()`, `.replace()`, indexing, slicing | Strings chapter |
 | Functions | `def`, parameters, `return`, scope | Functions chapter |
 | Older string formatting | `%` formatting, `str.format()` | Mentioned when f-strings are revisited; f-strings are the modern default |
+| Multiple assignment | `a, b = 1, 2` — tuple packing/unpacking | **Used in Ch.2 exercise specs before being taught; formally taught in Ch.3 with tuples** |
 | Input | `input()` | Deferred — exercises use fixed values so grading stays deterministic |
 
 ---
