@@ -103,6 +103,29 @@ That preserves the syllabus rule that grading includes cases not shown in
 advance — so passing CI means your solution meets the spec, not that it is
 finished.
 
+### How these suites are built, and what they may not do
+
+A failing test is a hypothesis, not a verdict. Two rules exist because a broken
+check once cost a full day of work and, worse, aimed the blame at the learner:
+
+1. **Tests assert behaviour, not the shape of the source.** What a program
+   prints is the specification; how it is written is not. A check that greps for
+   `+=`, or for a particular ordering of statements, will eventually reject a
+   correct solution that used a different structure — and the learner has no way
+   to tell that from being wrong. The only source-level exception is the
+   untaught-construct guard, which enforces an actual syllabus rule rather than
+   a stylistic preference, and even that inspects code with comments and string
+   literals stripped first.
+
+2. **Every suite is validated against at least two structurally different
+   solutions** before it ships — not one reference implementation. One correct
+   solution passing proves nothing except that the suite fits the way its author
+   happened to write it.
+
+If a test fails and the code looks right, say so rather than reshaping the code
+to satisfy it. Contorting a correct solution to make a check pass teaches the
+wrong lesson twice over.
+
 ## The rule CI cannot enforce
 
 Attempt everything unaided first. No searching, no reference beyond the chapter

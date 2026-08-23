@@ -104,8 +104,24 @@ def assert_only_taught(name):
                 )
 
 
+def code_only(src, keep_strings=False):
+    """Source with comments (and optionally string literals) removed.
+
+    Every check below inspects code, never prose. Without this, a comment
+    mentioning `== None`, or a printed string containing `== True`, trips a
+    check that has nothing to say about it.
+    """
+    out = []
+    for line in src.splitlines():
+        code = line.split("#", 1)[0]
+        if not keep_strings:
+            code = re.sub(r'"[^"]*"|\'[^\']*\'', '""', code)
+        out.append(code)
+    return "\n".join(out)
+
+
 def assert_converts(name, raw_values):
-    src = source_of(name)
+    src = code_only(source_of(name), keep_strings=True)
     for raw in raw_values:
         assert f'"{raw}"' in src or f"'{raw}'" in src, (
             f"{name}: {raw!r} was given as text and must be written as text, "
@@ -114,7 +130,7 @@ def assert_converts(name, raw_values):
 
 
 def assert_no_equals_none(name):
-    src = source_of(name)
+    src = code_only(source_of(name))
     assert not re.search(r"[!=]=\s*None", src), (
         f"{name}: compares against None with == or !=. Use `is None` / "
         "`is not None` — Chapter 2 §3 explains why this is a firm convention."
@@ -123,8 +139,15 @@ def assert_no_equals_none(name):
 
 def assert_no_always_true_or(name):
     """Catches `x == "A" or "B"` — always true, raises nothing."""
-    src = source_of(name)
-    hits = re.findall(r"==\s*[\"\'][^\"\']*[\"\']\s+or\s+[\"\'][^\"\']*[\"\']", src)
+    src = code_only(source_of(name), keep_strings=True)
+    # The trailing lookahead is the whole difficulty: `x == "A" or "B"` is the
+    # bug, but `x == "A" or "B" in note` is correct and common. The second
+    # literal is only a bug when nothing consumes it.
+    pattern = (
+        r"==\s*([\"\'])[^\"\']*\1\s+or\s+([\"\'])[^\"\']*\2"
+        r"(?!\s*(?:in|not\s+in)\b)"
+    )
+    hits = [m.group(0) for m in re.finditer(pattern, src)]
     assert not hits, (
         f"{name}: found {hits[0]!r}.\n"
         "This is always true for every input. Python reads it as "
@@ -134,7 +157,7 @@ def assert_no_always_true_or(name):
 
 
 def assert_no_redundant_bool_compare(name):
-    src = source_of(name)
+    src = code_only(source_of(name))
     hits = re.findall(r"==\s*(?:True|False)\b", src)
     assert not hits, (
         f"{name}: found `== {hits[0].split()[-1]}`. A bool is already a "
@@ -211,8 +234,9 @@ def test_ex3_only_taught():
 
 def test_ex3_uses_is_none():
     assert_no_equals_none("ex3.py")
-    assert "is None" in source_of("ex3.py"), (
-        "ex3.py: a missing code is None and must be tested with `is None`."
+    assert re.search(r"\bis\s+(?:not\s+)?None\b", code_only(source_of("ex3.py"))), (
+        "ex3.py: a missing code is None and must be tested with `is None` or "
+        "`is not None` — not with `==`."
     )
 
 
