@@ -240,15 +240,34 @@ def test_ex4_uses_is_none():
 def test_ex4_factors_are_independent():
     """The four risk factors must accumulate, not form a chain.
 
-    A chain would score only the first matching factor. ORD-4001 trips three
-    factors and must score 90 — the output test already catches a chain, but
-    this gives the reason directly rather than as a number mismatch.
+    ORD-4001 trips all four factors and must score 90. This checks the score
+    the program actually produces rather than the shape of the source text:
+    accumulating with `+=`, rebinding with `x = x + n`, and summing conditional
+    expressions are all correct, and no text heuristic distinguishes those from
+    a chain without false positives.
     """
-    src = source_of("ex4.py")
-    a_block = src.split("b_value")[0]
-    assert a_block.count("+=") >= 4 or a_block.count("score =") >= 4, (
-        "ex4.py: the four risk factors must each be able to apply. Chapter 2 §4 "
-        "covers why a chain is wrong here — it would score only the first match."
+    lines = run_submission("ex4.py")
+    if not lines:
+        pytest.fail("ex4.py produced no output.")
+    fields = lines[0].split()
+    if len(fields) < 2 or not fields[1].lstrip("-").isdigit():
+        pytest.skip("ex4.py line 1 is not in the expected shape; see the output test")
+    score = int(fields[1])
+    if score == 90:
+        return
+    if score in (30, 25, 20, 15):
+        pytest.fail(
+            f"ex4.py: ORD-4001 scored {score}, which is exactly one factor's "
+            "points. The four factors are independent — an order can trip any "
+            "combination and every one that applies adds. A chain "
+            "(`if`/`elif`/`elif`) stops at the first match, which is what this "
+            "score means. Chapter 2 §4 covers the distinction.\n"
+            "Note the routing below it is the opposite case: exactly one route "
+            "applies, so that one *is* a chain."
+        )
+    pytest.fail(
+        f"ex4.py: ORD-4001 scored {score}, expected 90 "
+        "(30 + 25 + 20 + 15 — it trips all four factors)."
     )
 
 
