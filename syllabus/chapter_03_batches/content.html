@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 3 · Doing It Once for Every Order</title>
+<link rel="stylesheet" href="../../assets/textbook.css">
+</head>
+<body>
+<main class="page">
+
+<header class="chapter-head">
+  <div class="chapter-eyebrow">Chapter Three</div>
+  <h1>Doing It Once for Every Order</h1>
+  <p class="chapter-standfirst">Chapter 2 asked you to process four orders, and the only way to do it was to write the same decision chain four times. That worked, and it also produced four real bugs — every one of them a block copied and a letter not changed. This chapter removes the possibility.</p>
+</header>
+
+<h2>Why this chapter exists</h2>
+
+<p>At the end of Chapter 2 you had a working order pipeline. It passed every test. It also contained this line:</p>
+
+<pre><code><span class="k">elif</span> <span class="k">not</span> a_shipping_destinations<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f"</span>{b_id}<span class="s">  </span>{<span class="s">'REJECTED'</span><span class="o">:</span>&lt;12}<span class="s">we do not ship to </span>{b_dest}<span class="s">"</span>)</code></pre>
+
+<p>Order <em>B</em>'s rejection message, guarded by order <em>A</em>'s destination check. The program shipped goods to a country it had no carrier for, silently, and every test passed — because on that particular data, A's destination happened to be valid and B's happened to be fine anyway.</p>
+
+<p>That bug is not a reasoning failure. You understood the rule perfectly; you wrote it correctly three times out of four. It is a <strong>transcription</strong> failure, and transcription failures have one necessary ingredient: something to transcribe. Write the block once and there is no <code>a_</code> to leave behind, because there is no <code>b_</code> to change it into.</p>
+
+<div class="aside">
+  <span class="label">The measurement</span>
+  Chapter 2's submission contained roughly eighty lines of duplicated logic and four duplicate-and-forget defects. That is one defect per twenty duplicated lines, produced by someone who understood every rule involved. Repetition is not merely inelegant — it manufactures bugs at a rate you can measure.
+</div>
+
+<p>So this chapter does two things. First it gives you a way to hold many values under one name — the <strong>tuple</strong>. Then it gives you a way to run one block of code once for each of them — the <strong>loop</strong>. Together they turn "the same work, four times, written four times" into "the same work, four times, written once."</p>
+
+<h2>1. Holding more than one value: the tuple</h2>
+
+<p>Every name you have written so far has pointed at exactly one value. <code>a_id</code> is one string. <code>a_value</code> is one float. When you had three orders you needed three sets of names, which is precisely where the trouble started.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>A <strong>tuple</strong> is a single value that contains several values in a fixed order. It is written as items separated by commas, conventionally surrounded by parentheses: <code>(1, 2, 3)</code>. Its type is <code>tuple</code>, and like <code>int</code> or <code>str</code> it is an ordinary value — you can bind a name to it, print it, or pass it around.</p>
+</div>
+
+<pre><code>destinations <span class="o">=</span> (<span class="s">"GB"</span><span class="o">,</span> <span class="s">"IE"</span><span class="o">,</span> <span class="s">"FR"</span>)
+
+<span class="f">print</span>(destinations)
+<span class="f">print</span>(<span class="f">type</span>(destinations))
+<span class="f">print</span>(<span class="f">len</span>(destinations))</code></pre>
+<div class="out">('GB', 'IE', 'FR')
+&lt;class 'tuple'&gt;
+3</div>
+
+<p>Three things to take from that. <code>print</code> shows a tuple with its parentheses and commas, which is Python telling you plainly that this is <em>one</em> value made of three. <code>type()</code> — the diagnostic from Chapter 1 §3 — reports <code>tuple</code>. And <code>len()</code> is new:</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p><code>len(x)</code> is a built-in function that returns, as an <code>int</code>, how many items <code>x</code> contains. It works on tuples and on strings (where it counts characters). It is not a method or a property — it is a plain function call, the same shape as <code>int(x)</code> or <code>round(x)</code>.</p>
+</div>
+
+<pre><code><span class="f">print</span>(<span class="f">len</span>(<span class="s">"ORD-1001"</span>))
+<span class="f">print</span>(<span class="f">len</span>(()))</code></pre>
+<div class="out">8
+0</div>
+
+<p><code>()</code> is the empty tuple — zero items, perfectly legal, and <code>len</code> of it is <code>0</code>. Remember from Chapter 2 §3 that <code>0</code> is falsy, which means an empty tuple is falsy too, and <code>if orders:</code> is a natural way to ask "is there anything to process?"</p>
+
+<h4>Reaching an individual item: indexing</h4>
+
+<p>Items in a tuple have positions, and you get at one by writing the position in square brackets after the tuple.</p>
+
+<pre><code>destinations <span class="o">=</span> (<span class="s">"GB"</span><span class="o">,</span> <span class="s">"IE"</span><span class="o">,</span> <span class="s">"FR"</span>)
+
+<span class="f">print</span>(destinations[<span class="n">0</span>])
+<span class="f">print</span>(destinations[<span class="n">2</span>])
+<span class="f">print</span>(destinations[<span class="o">-</span><span class="n">1</span>])</code></pre>
+<div class="out">GB
+FR
+FR</div>
+
+<p><strong>Positions start at zero.</strong> The first item is <code>[0]</code>, the second <code>[1]</code>, the third <code>[2]</code>. This is not an arbitrary quirk — it is near-universal across programming languages, and the reason is that an index is best understood as <em>an offset from the start</em>. The first item is zero items along from the beginning.</p>
+
+<p>The practical consequence is that the last index of a tuple of length 3 is <code>2</code>, not <code>3</code>. Asking for <code>destinations[3]</code> raises:</p>
+
+<pre><code>destinations <span class="o">=</span> (<span class="s">"GB"</span><span class="o">,</span> <span class="s">"IE"</span><span class="o">,</span> <span class="s">"FR"</span>)
+<span class="f">print</span>(destinations[<span class="n">3</span>])</code></pre>
+<div class="out">IndexError: tuple index out of range</div>
+
+<p>Add <code>IndexError</code> to the small list of error names from Chapter 1 §10 that you can now read at a glance. It means: that position does not exist.</p>
+
+<p>A negative index counts backwards from the end, so <code>[-1]</code> is the last item, <code>[-2]</code> the one before it. This is genuinely useful — <code>destinations[-1]</code> says "the last one" without you having to know or compute how many there are.</p>
+
+<figure>
+<svg viewBox="0 0 620 176" role="img" aria-label="A tuple of three strings with forward indices 0, 1, 2 above and negative indices -3, -2, -1 below">
+  <rect x="90" y="52" width="140" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="230" y="52" width="140" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="370" y="52" width="140" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="160" y="87" text-anchor="middle" font-family="ui-monospace,monospace" font-size="19">"GB"</text>
+  <text x="300" y="87" text-anchor="middle" font-family="ui-monospace,monospace" font-size="19">"IE"</text>
+  <text x="440" y="87" text-anchor="middle" font-family="ui-monospace,monospace" font-size="19">"FR"</text>
+  <text x="160" y="38" text-anchor="middle" font-family="ui-monospace,monospace" font-size="15" opacity="0.75">0</text>
+  <text x="300" y="38" text-anchor="middle" font-family="ui-monospace,monospace" font-size="15" opacity="0.75">1</text>
+  <text x="440" y="38" text-anchor="middle" font-family="ui-monospace,monospace" font-size="15" opacity="0.75">2</text>
+  <text x="160" y="130" text-anchor="middle" font-family="ui-monospace,monospace" font-size="15" opacity="0.75">-3</text>
+  <text x="300" y="130" text-anchor="middle" font-family="ui-monospace,monospace" font-size="15" opacity="0.75">-2</text>
+  <text x="440" y="130" text-anchor="middle" font-family="ui-monospace,monospace" font-size="15" opacity="0.75">-1</text>
+  <text x="46" y="30" font-size="13" opacity="0.75">index</text>
+  <text x="20" y="134" font-size="13" opacity="0.75">from the end</text>
+  <text x="90" y="163" font-size="13" opacity="0.75">len(destinations) is 3 — so the highest valid index is 2</text>
+</svg>
+</figure>
+
+<h4>A tuple cannot be changed</h4>
+
+<p>Once built, a tuple's items are fixed. Assigning to a position raises an error:</p>
+
+<pre><code>destinations <span class="o">=</span> (<span class="s">"GB"</span><span class="o">,</span> <span class="s">"IE"</span><span class="o">,</span> <span class="s">"FR"</span>)
+destinations[<span class="n">0</span>] <span class="o">=</span> <span class="s">"DE"</span></code></pre>
+<div class="out">TypeError: 'tuple' object does not support item assignment</div>
+
+<p>This is called being <strong>immutable</strong>, and it is a feature rather than a limitation. A tuple is the right choice when the group of values <em>is</em> the thing — a coordinate pair, a row from a report, one order's fields. Nothing can quietly reach in and alter it halfway through your program.</p>
+
+<div class="aside">
+  <span class="label">A sibling, deliberately deferred</span>
+  Python's <strong>list</strong> — written <code>["GB", "IE"]</code> with square brackets — is the mutable counterpart: same indexing, but items can be replaced, added and removed. Lists get their own chapter, because "this collection changes over time" brings a set of problems (growing, shrinking, and the classic mistake of modifying a collection while looping over it) that deserve proper treatment rather than a footnote. Everything you learn here about indexing and looping applies to lists unchanged.
+</div>
+
+<h4>Unpacking: the thing you have already been using</h4>
+
+<p>Chapter 2's exercises handed you lines like this:</p>
+
+<pre><code>a_id<span class="o">,</span> a_raw_value<span class="o">,</span> a_age <span class="o">=</span> <span class="s">"ORD-4001"</span><span class="o">,</span> <span class="s">"1240.00"</span><span class="o">,</span> <span class="n">3</span></code></pre>
+
+<p>That was a tuple all along, and it was handed to you before it was taught — recorded in <code>syllabus_map.md</code> as a gap, and this is where it closes. The right-hand side builds the tuple <code>("ORD-4001", "1240.00", 3)</code>; parentheses are optional when the meaning is unambiguous. The left-hand side then takes it apart again and binds each item to its own name. Building it is called <strong>packing</strong>; taking it apart is <strong>unpacking</strong>.</p>
+
+<pre><code>order <span class="o">=</span> (<span class="s">"ORD-4001"</span><span class="o">,</span> <span class="s">"1240.00"</span><span class="o">,</span> <span class="n">3</span>)
+order_id<span class="o">,</span> raw_value<span class="o">,</span> age <span class="o">=</span> order
+
+<span class="f">print</span>(order_id)
+<span class="f">print</span>(age)</code></pre>
+<div class="out">ORD-4001
+3</div>
+
+<p>The count must match exactly. Too few names or too many and Python refuses rather than guessing which one you meant to drop:</p>
+
+<pre><code>order <span class="o">=</span> (<span class="s">"ORD-4001"</span><span class="o">,</span> <span class="s">"1240.00"</span><span class="o">,</span> <span class="n">3</span>)
+order_id<span class="o">,</span> raw_value <span class="o">=</span> order</code></pre>
+<div class="out">ValueError: too many values to unpack (expected 2, got 3)</div>
+
+<p>Unpacking is why the neat swap works — the classic demonstration, and worth understanding rather than memorising:</p>
+
+<pre><code>low<span class="o">,</span> high <span class="o">=</span> <span class="n">10</span><span class="o">,</span> <span class="n">3</span>
+low<span class="o">,</span> high <span class="o">=</span> high<span class="o">,</span> low
+<span class="f">print</span>(low<span class="o">,</span> high)</code></pre>
+<div class="out">3 10</div>
+
+<p>The entire right-hand side is evaluated first, producing the tuple <code>(3, 10)</code>, and only then is anything assigned. No temporary variable, and no moment where one of them has been overwritten and the other has not.</p>
+
+<h4>Membership: <code>in</code> against a tuple</h4>
+
+<p>Chapter 2 §"Other" taught <code>in</code> for substring tests. Against a tuple it asks a different and more useful question: <em>is this value one of these items?</em></p>
+
+<pre><code>allowed <span class="o">=</span> (<span class="s">"GB"</span><span class="o">,</span> <span class="s">"IE"</span><span class="o">,</span> <span class="s">"FR"</span>)
+dest <span class="o">=</span> <span class="s">"IE"</span>
+
+<span class="f">print</span>(dest <span class="k">in</span> allowed)
+<span class="f">print</span>(<span class="s">"DE"</span> <span class="k">in</span> allowed)
+<span class="f">print</span>(<span class="s">"DE"</span> <span class="k">not</span> <span class="k">in</span> allowed)</code></pre>
+<div class="out">True
+False
+True</div>
+
+<p>Compare that with what you wrote in Chapter 2:</p>
+
+<pre><code>a_ok <span class="o">=</span> a_dest <span class="o">==</span> <span class="s">"GB"</span> <span class="k">or</span> a_dest <span class="o">==</span> <span class="s">"IE"</span> <span class="k">or</span> a_dest <span class="o">==</span> <span class="s">"FR"</span></code></pre>
+
+<p>Both are correct. But the second states the allowed countries three times, once per order, and adding Spain means editing every one of those lines. With a tuple the policy is written once, given a name, and the test reads as the sentence it is: <code>if dest not in allowed:</code>. This is also why the Chapter 2 grader rejected <code>in ("A", "B")</code> — not because it is bad, but because it would have let you skip the ache that makes this paragraph land.</p>
+
+<h2>2. Build before you borrow: what a loop actually replaces</h2>
+
+<p>Before meeting the syntax, be precise about the work it does. Here is Chapter 2's shape, reduced to its bones — three orders, one rule:</p>
+
+<pre><code>a_value <span class="o">=</span> <span class="n">642.50</span>
+b_value <span class="o">=</span> <span class="n">120.00</span>
+c_value <span class="o">=</span> <span class="n">500.00</span>
+
+<span class="k">if</span> a_value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f"</span>{a_value}<span class="s"> ships free"</span>)
+<span class="k">if</span> b_value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f"</span>{b_value}<span class="s"> ships free"</span>)
+<span class="k">if</span> c_value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f"</span>{c_value}<span class="s"> ships free"</span>)</code></pre>
+<div class="out">642.5 ships free
+500.0 ships free</div>
+
+<p>Look at what varies and what does not. The rule — compare against 500, print a message — is <em>identical</em> three times. The only thing that changes is which value is being examined. Every character of the difference between those three blocks is the single letter at the start of one name.</p>
+
+<p>So the operation you want is: <em>take these three values; for each one in turn, bind it to a name and run this block.</em> That sentence is the loop, and Python spells it almost exactly that way.</p>
+
+<h2>3. The <code>for</code> loop</h2>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>A <strong>for loop</strong> runs a block of code once for each item of a sequence, binding that item to a name you choose before each run. The form is <code>for <em>name</em> in <em>sequence</em>:</code> followed by an indented block. One run of the block is called an <strong>iteration</strong>.</p>
+</div>
+
+<pre><code>values <span class="o">=</span> (<span class="n">642.50</span><span class="o">,</span> <span class="n">120.00</span><span class="o">,</span> <span class="n">500.00</span>)
+
+<span class="k">for</span> value <span class="k">in</span> values<span class="o">:</span>
+    <span class="k">if</span> value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f"</span>{value}<span class="s"> ships free"</span>)</code></pre>
+<div class="out">642.5 ships free
+500.0 ships free</div>
+
+<p>Identical output, and now the rule exists once. Take the first line apart symbol by symbol:</p>
+
+<ul>
+  <li><code>for</code> — a keyword, like <code>if</code>. It begins the statement.</li>
+  <li><code>value</code> — <strong>a name you invent</strong>, not something Python supplies. It is bound to a different item on each iteration. Name it for what one item <em>is</em>: <code>value</code>, <code>order</code>, <code>country</code> — singular, because it holds one of them.</li>
+  <li><code>in</code> — the same keyword as the membership test, used here as part of the <code>for</code> syntax. It is not asking a question; it is separating the name from the sequence.</li>
+  <li><code>values</code> — the sequence to walk through. A tuple here; strings work too, and so will lists and dictionaries later.</li>
+  <li><code>:</code> — the colon that ends any statement introducing a block, exactly as with <code>if</code> in Chapter 2 §4.</li>
+</ul>
+
+<p>Then the indented block below is the <strong>body</strong>. The same four-space indentation rule from Chapter 2 applies, and the same consequences: the body is defined by its indentation and nothing else. A line that should be inside the loop but is not indented runs once, after the loop finishes, which is one of the two or three most common beginner bugs in Python.</p>
+
+<figure>
+<svg viewBox="0 0 640 300" role="img" aria-label="Flow of a for loop: take next item, bind it to the loop name, run the body, repeat until the sequence is exhausted">
+  <rect x="230" y="14" width="180" height="40" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="320" y="39" text-anchor="middle" font-size="14">start of the loop</text>
+  <path d="M320 54 L320 84" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <path d="M320 90 l-5 -9 h10 z" fill="currentColor"/>
+  <path d="M320 90 L440 130 L320 170 L200 130 Z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="320" y="126" text-anchor="middle" font-size="13">any items left</text>
+  <text x="320" y="144" text-anchor="middle" font-size="13">in the sequence?</text>
+  <path d="M440 130 L560 130 L560 236" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <path d="M560 242 l-5 -9 h10 z" fill="currentColor"/>
+  <text x="452" y="122" font-size="12" opacity="0.8">no</text>
+  <path d="M320 170 L320 196" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <path d="M320 202 l-5 -9 h10 z" fill="currentColor"/>
+  <text x="330" y="190" font-size="12" opacity="0.8">yes</text>
+  <rect x="180" y="202" width="280" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="320" y="222" text-anchor="middle" font-size="13">bind the next item to the loop name,</text>
+  <text x="320" y="238" text-anchor="middle" font-size="13">then run the indented body once</text>
+  <path d="M180 224 L100 224 L100 130 L200 130" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="4 3"/>
+  <path d="M200 130 l-9 -5 v10 z" fill="currentColor" transform="translate(9,0)"/>
+  <text x="104" y="176" font-size="12" opacity="0.8">repeat</text>
+  <rect x="470" y="242" width="180" height="40" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="560" y="267" text-anchor="middle" font-size="14">carry on below</text>
+</svg>
+</figure>
+
+<p>Notice what the diagram does <em>not</em> contain: any mention of counting, or of a position. A <code>for</code> loop in Python walks the items themselves. You do not say "from index 0 up to length minus one" — that is how loops are written in some other languages and it is where off-by-one errors come from. Python hands you each item directly.</p>
+
+<h4>The loop name is an ordinary name</h4>
+
+<p>Nothing about <code>value</code> is special. It is rebound before each iteration exactly as <code>x = ...</code> rebinds, and it survives after the loop ends, holding whatever it held last:</p>
+
+<pre><code><span class="k">for</span> country <span class="k">in</span> (<span class="s">"GB"</span><span class="o">,</span> <span class="s">"IE"</span><span class="o">,</span> <span class="s">"FR"</span>)<span class="o">:</span>
+    <span class="f">print</span>(country)
+
+<span class="f">print</span>(<span class="s">"after the loop:"</span><span class="o">,</span> country)</code></pre>
+<div class="out">GB
+IE
+FR
+after the loop: FR</div>
+
+<p>Relying on that leftover value is poor practice — it reads as an accident — but knowing it happens explains a whole category of confusing behaviour. Note also that the sequence can be written inline; it does not need a name of its own if it is only used once.</p>
+
+<h4>Looping over a string</h4>
+
+<p>A string is a sequence of characters, so it works without any special handling:</p>
+
+<pre><code>flags <span class="o">=</span> <span class="s">""</span>
+<span class="k">for</span> ch <span class="k">in</span> <span class="s">"ORD-1001"</span><span class="o">:</span>
+    <span class="k">if</span> ch <span class="o">==</span> <span class="s">"-"</span><span class="o">:</span>
+        flags <span class="o">=</span> flags <span class="o">+</span> <span class="s">"|"</span>
+    <span class="k">else</span><span class="o">:</span>
+        flags <span class="o">=</span> flags <span class="o">+</span> <span class="s">"."</span>
+<span class="f">print</span>(flags)</code></pre>
+<div class="out">...|....</div>
+
+<h2>4. A tuple of tuples: the shape that fixes Chapter 2</h2>
+
+<p>One order has several fields, and you have several orders. That is a tuple of tuples — and unpacking, which you met in §1, can happen right in the loop header.</p>
+
+<pre><code>orders <span class="o">=</span> (
+    (<span class="s">"ORD-1001"</span><span class="o">,</span> <span class="s">"642.50"</span><span class="o">,</span> <span class="s">"GB"</span>)<span class="o">,</span>
+    (<span class="s">"ORD-1002"</span><span class="o">,</span> <span class="s">"120.00"</span><span class="o">,</span> <span class="s">"DE"</span>)<span class="o">,</span>
+    (<span class="s">"ORD-1003"</span><span class="o">,</span> <span class="s">"500.00"</span><span class="o">,</span> <span class="s">"IE"</span>)<span class="o">,</span>
+)
+
+allowed <span class="o">=</span> (<span class="s">"GB"</span><span class="o">,</span> <span class="s">"IE"</span><span class="o">,</span> <span class="s">"FR"</span>)
+
+<span class="k">for</span> order_id<span class="o">,</span> raw_value<span class="o">,</span> dest <span class="k">in</span> orders<span class="o">:</span>
+    value <span class="o">=</span> <span class="f">float</span>(raw_value)
+    <span class="k">if</span> dest <span class="k">not</span> <span class="k">in</span> allowed<span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f"</span>{order_id}<span class="s">: REJECTED - we do not ship to </span>{dest}<span class="s">"</span>)
+    <span class="k">elif</span> value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f"</span>{order_id}<span class="s">: ships free"</span>)
+    <span class="k">else</span><span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f"</span>{order_id}<span class="s">: ships at 3.95"</span>)</code></pre>
+<div class="out">ORD-1001: ships free
+ORD-1002: REJECTED - we do not ship to DE
+ORD-1003: ships free</div>
+
+<p>Read the loop header again: <code>for order_id, raw_value, dest in orders:</code>. On each iteration Python takes the next inner tuple and unpacks it into three names. Those names are ordinary — no prefixes, no letters to forget, because there is exactly one block.</p>
+
+<p>Now count what changes if a fourth order arrives: <strong>one line</strong>, added to <code>orders</code>. Not a fourth copy of the decision chain. This is the difference between code that grows linearly with the data and code that does not grow at all.</p>
+
+<p>The trailing comma after the last inner tuple is legal and conventional. It means that adding a line later touches only the new line, which keeps diffs — and code review — clean.</p>
+
+<div class="aside">
+  <span class="label">One-item tuples need the comma</span>
+  <code>("GB")</code> is <em>not</em> a tuple — the parentheses are read as ordinary grouping, and the value is just the string <code>"GB"</code>. The comma is what makes a tuple, so a single-item tuple is written <code>("GB",)</code>. This matters in practice: <code>if dest in ("GB")</code> silently becomes a substring test rather than a membership test, and will happily accept <code>"G"</code>.
+</div>
+
+<h2>5. Accumulating a result across iterations</h2>
+
+<p>Printing inside a loop is easy. The harder and far more common job is building up a single answer from many items — a total, a count, the largest so far. The pattern is always the same three steps, and it is worth naming because you will write it hundreds of times.</p>
+
+<div class="definition">
+  <div class="label">The accumulator pattern</div>
+  <p><strong>1.</strong> Before the loop, create a name holding the answer for "nothing seen yet" — <code>0</code> for a sum or a count, <code>""</code> for text. <strong>2.</strong> Inside the loop, update that name using its own current value. <strong>3.</strong> After the loop, use it.</p>
+</div>
+
+<pre><code>values <span class="o">=</span> (<span class="n">642.50</span><span class="o">,</span> <span class="n">120.00</span><span class="o">,</span> <span class="n">500.00</span>)
+
+total <span class="o">=</span> <span class="n">0.0</span>
+free_count <span class="o">=</span> <span class="n">0</span>
+
+<span class="k">for</span> value <span class="k">in</span> values<span class="o">:</span>
+    total <span class="o">+=</span> value
+    <span class="k">if</span> value <span class="o">&gt;=</span> <span class="n">500</span><span class="o">:</span>
+        free_count <span class="o">+=</span> <span class="n">1</span>
+
+<span class="f">print</span>(<span class="s">f"</span>{<span class="f">len</span>(values)}<span class="s"> orders, </span>{free_count}<span class="s"> shipping free, total </span>{total<span class="o">:</span>,.2f}<span class="s">"</span>)</code></pre>
+<div class="out">3 orders, 2 shipping free, total 1,262.50</div>
+
+<p><code>+=</code> is the augmented assignment from Chapter 1 §6, and this is what it was built for: <code>total += value</code> is <code>total = total + value</code>. The name on the left is both the input and the output, which is exactly what "accumulate" means.</p>
+
+<p><strong>The initial value is a real decision, not boilerplate.</strong> Starting a sum at <code>0.0</code> rather than <code>0</code> keeps the type consistent from the first iteration. Starting a count at <code>0</code> is right because zero things have been counted. And the reason step 1 must happen <em>before</em> the loop is that putting it inside resets the answer on every pass — which produces a total equal to the last item, a bug that looks plausible enough to survive a quick glance.</p>
+
+<h4>Finding a maximum</h4>
+
+<p>The same pattern, with a comparison instead of an addition:</p>
+
+<pre><code>orders <span class="o">=</span> (
+    (<span class="s">"ORD-1001"</span><span class="o">,</span> <span class="n">642.50</span>)<span class="o">,</span>
+    (<span class="s">"ORD-1002"</span><span class="o">,</span> <span class="n">120.00</span>)<span class="o">,</span>
+    (<span class="s">"ORD-1003"</span><span class="o">,</span> <span class="n">500.00</span>)<span class="o">,</span>
+)
+
+largest_id <span class="o">=</span> <span class="k">None</span>
+largest_value <span class="o">=</span> <span class="n">0.0</span>
+
+<span class="k">for</span> order_id<span class="o">,</span> value <span class="k">in</span> orders<span class="o">:</span>
+    <span class="k">if</span> value <span class="o">&gt;</span> largest_value<span class="o">:</span>
+        largest_value <span class="o">=</span> value
+        largest_id <span class="o">=</span> order_id
+
+<span class="k">if</span> largest_id <span class="k">is</span> <span class="k">None</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"no orders"</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f"largest: </span>{largest_id}<span class="s"> at </span>{largest_value<span class="o">:</span>,.2f}<span class="s">"</span>)</code></pre>
+<div class="out">largest: ORD-1001 at 642.50</div>
+
+<p><code>None</code> as the starting id, tested with <code>is None</code> afterwards, is the Chapter 2 §3 convention doing real work: it distinguishes "no order was largest because there were no orders" from any actual answer. Starting <code>largest_value</code> at <code>0.0</code> is a decision with a hidden assumption — that no value is negative. For order values that is safe. For a temperature reading it would be a bug, and the fix is to start at <code>None</code> too and handle the first iteration specially.</p>
+
+<h2>6. Counting with <code>range</code></h2>
+
+<p>Sometimes there is no sequence to walk — you simply want to do something a fixed number of times, or you need the position of each item as well as the item.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p><code>range(stop)</code> produces the whole numbers from <code>0</code> up to <strong>but not including</strong> <code>stop</code>. <code>range(start, stop)</code> begins at <code>start</code> instead. <code>range(start, stop, step)</code> counts in increments of <code>step</code>. It is a built-in, and it is designed to be looped over.</p>
+</div>
+
+<pre><code><span class="k">for</span> n <span class="k">in</span> <span class="f">range</span>(<span class="n">3</span>)<span class="o">:</span>
+    <span class="f">print</span>(n)
+
+<span class="f">print</span>(<span class="s">"---"</span>)
+
+<span class="k">for</span> n <span class="k">in</span> <span class="f">range</span>(<span class="n">1</span><span class="o">,</span> <span class="n">4</span>)<span class="o">:</span>
+    <span class="f">print</span>(n)</code></pre>
+<div class="out">0
+1
+2
+---
+1
+2
+3</div>
+
+<p><strong>The exclusive end is the point, not a trap.</strong> Because <code>range(3)</code> yields <code>0, 1, 2</code>, it produces exactly three numbers, and they are exactly the valid indices of a three-item tuple. <code>range(len(orders))</code> therefore always covers every position, whatever the length. That property is what the design is for.</p>
+
+<p>Combining it with indexing gives you position and item together:</p>
+
+<pre><code>orders <span class="o">=</span> (<span class="s">"ORD-1001"</span><span class="o">,</span> <span class="s">"ORD-1002"</span><span class="o">,</span> <span class="s">"ORD-1003"</span>)
+
+<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(orders))<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f"</span>{i <span class="o">+</span> <span class="n">1</span><span class="o">:</span>&gt;2}<span class="s">. </span>{orders[i]}<span class="s">"</span>)</code></pre>
+<div class="out"> 1. ORD-1001
+ 2. ORD-1002
+ 3. ORD-1003</div>
+
+<p><code>i + 1</code> because line numbers shown to a human start at one while indices start at zero — the one place the mismatch is genuinely yours to manage.</p>
+
+<div class="aside">
+  <span class="label">Prefer the direct loop</span>
+  If you do not need the index, <code>for order in orders:</code> beats <code>for i in range(len(orders)):</code> every time — it is shorter, it cannot go out of range, and it says what you mean. Reach for <code>range</code> when you need the number itself: a countdown, a fixed repetition, or a line number. Python has a neater tool for "index and item at once" called <code>enumerate</code>; it is deferred to the chapter on lists, where it belongs.
+</div>
+
+<h2>7. <code>while</code>: repeating until something becomes true</h2>
+
+<p>A <code>for</code> loop runs once per item, and the number of iterations is known before it starts. Sometimes it is not known — you repeat until a condition changes, and how long that takes depends on what happens inside.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>A <strong>while loop</strong> evaluates a condition, and runs its indented body if the condition is truthy — then evaluates the condition again, and again, until it is falsy. The form is <code>while <em>condition</em>:</code>. The condition is checked <em>before</em> each iteration, so a body may run zero times.</p>
+</div>
+
+<pre><code>remaining <span class="o">=</span> <span class="n">17</span>
+pallets <span class="o">=</span> <span class="n">0</span>
+
+<span class="k">while</span> remaining <span class="o">&gt;</span> <span class="n">0</span><span class="o">:</span>
+    remaining <span class="o">-=</span> <span class="n">5</span>
+    pallets <span class="o">+=</span> <span class="n">1</span>
+
+<span class="f">print</span>(<span class="s">f"</span>{pallets}<span class="s"> pallets, </span>{<span class="f">abs</span>(remaining)}<span class="s"> spaces spare"</span>)</code></pre>
+<div class="out">4 pallets, 3 spaces spare</div>
+
+<p>Everything the condition depends on must be able to change inside the body, or the loop never ends. That is the one failure mode <code>while</code> has and <code>for</code> does not:</p>
+
+<pre><code>remaining <span class="o">=</span> <span class="n">17</span>
+<span class="k">while</span> remaining <span class="o">&gt;</span> <span class="n">0</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"working"</span>)     <span class="c"># remaining never changes — this never stops</span></code></pre>
+
+<p>An infinite loop does not crash. It sits there consuming the processor until you interrupt it with <kbd>Ctrl+C</kbd>, which raises <code>KeyboardInterrupt</code> and stops the program. Getting this wrong is normal; the habit that prevents it is to write the line that moves the condition <em>at the same time</em> as the condition itself.</p>
+
+<div class="aside">
+  <span class="label">Choosing between them</span>
+  Use <code>for</code> when you have a collection to walk or a known count — which is most of the time. Use <code>while</code> when the stopping point depends on work done inside the loop: consuming a quantity, retrying until success, processing until a sentinel value appears. If you find yourself maintaining your own counter in a <code>while</code> loop purely to walk a sequence, a <code>for</code> loop is the tool you actually wanted.
+</div>
+
+<h2>8. Leaving early: <code>break</code> and <code>continue</code></h2>
+
+<p>Two keywords change the flow inside any loop.</p>
+
+<p><code>break</code> abandons the loop entirely — no further iterations, execution resumes after the loop body. It is how you express "I have found what I came for":</p>
+
+<pre><code>orders <span class="o">=</span> (
+    (<span class="s">"ORD-1001"</span><span class="o">,</span> <span class="n">120.00</span>)<span class="o">,</span>
+    (<span class="s">"ORD-1002"</span><span class="o">,</span> <span class="n">1450.00</span>)<span class="o">,</span>
+    (<span class="s">"ORD-1003"</span><span class="o">,</span> <span class="n">640.00</span>)<span class="o">,</span>
+)
+
+flagged <span class="o">=</span> <span class="k">None</span>
+<span class="k">for</span> order_id<span class="o">,</span> value <span class="k">in</span> orders<span class="o">:</span>
+    <span class="k">if</span> value <span class="o">&gt;</span> <span class="n">1000</span><span class="o">:</span>
+        flagged <span class="o">=</span> order_id
+        <span class="k">break</span>
+
+<span class="f">print</span>(<span class="s">f"first high-value order: </span>{flagged}<span class="s">"</span>)</code></pre>
+<div class="out">first high-value order: ORD-1002</div>
+
+<p>Without the <code>break</code>, <code>flagged</code> would end up holding the <em>last</em> matching order rather than the first — a difference that silently disappears when only one item matches, which is exactly how it survives testing.</p>
+
+<p><code>continue</code> abandons only the current iteration and moves to the next. It is the tool for skipping items you do not care about, and it keeps the interesting code at one level of indentation instead of buried inside an <code>if</code>:</p>
+
+<pre><code>orders <span class="o">=</span> (
+    (<span class="s">"ORD-1001"</span><span class="o">,</span> <span class="s">"642.50"</span>)<span class="o">,</span>
+    (<span class="s">"ORD-1002"</span><span class="o">,</span> <span class="k">None</span>)<span class="o">,</span>
+    (<span class="s">"ORD-1003"</span><span class="o">,</span> <span class="s">"500.00"</span>)<span class="o">,</span>
+)
+
+total <span class="o">=</span> <span class="n">0.0</span>
+skipped <span class="o">=</span> <span class="n">0</span>
+
+<span class="k">for</span> order_id<span class="o">,</span> raw_value <span class="k">in</span> orders<span class="o">:</span>
+    <span class="k">if</span> raw_value <span class="k">is</span> <span class="k">None</span><span class="o">:</span>
+        skipped <span class="o">+=</span> <span class="n">1</span>
+        <span class="k">continue</span>
+    total <span class="o">+=</span> <span class="f">float</span>(raw_value)
+
+<span class="f">print</span>(<span class="s">f"total </span>{total<span class="o">:</span>,.2f}<span class="s"> across </span>{<span class="f">len</span>(orders) <span class="o">-</span> skipped}<span class="s"> orders, </span>{skipped}<span class="s"> incomplete"</span>)</code></pre>
+<div class="out">total 1,142.50 across 2 orders, 1 incomplete</div>
+
+<p>Both keywords affect only the innermost loop containing them.</p>
+
+<h2>9. Loops inside loops</h2>
+
+<p>A loop body is ordinary code, so it may contain another loop. The inner loop runs <em>completely</em> for every single iteration of the outer one.</p>
+
+<pre><code>warehouses <span class="o">=</span> (<span class="s">"LDN"</span><span class="o">,</span> <span class="s">"MAN"</span>)
+bands <span class="o">=</span> (<span class="s">"FREE"</span><span class="o">,</span> <span class="s">"STANDARD"</span>)
+
+<span class="k">for</span> warehouse <span class="k">in</span> warehouses<span class="o">:</span>
+    <span class="k">for</span> band <span class="k">in</span> bands<span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f"</span>{warehouse}<span class="s"> · </span>{band}<span class="s">"</span>)</code></pre>
+<div class="out">LDN · FREE
+LDN · STANDARD
+MAN · FREE
+MAN · STANDARD</div>
+
+<p>Two warehouses times two bands gives four lines, and that multiplication is the thing to keep in mind: nesting a 1,000-item loop inside another 1,000-item loop is a million iterations. Most of the time a nested loop is genuinely what the problem needs — every combination of two things — but it is also where a program stops being fast without any single line looking wrong.</p>
+
+<h2>10. What this makes possible, and what is still coming</h2>
+
+<p>You can now express "do this for every one of those" without writing it twice. That is the single largest jump in what you can build, and it is why Chapter 2's exercises were deliberately painful.</p>
+
+<p>Deliberately deferred, so you know they exist:</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tool</th><th>What it adds</th><th>Where it lands</th></tr></thead>
+<tbody>
+<tr><td><code>list</code></td><td>a sequence you can change — append, replace, remove</td><td>Lists chapter, next</td></tr>
+<tr><td><code>enumerate</code></td><td>index and item together, without <code>range(len(...))</code></td><td>Lists chapter</td></tr>
+<tr><td><code>zip</code></td><td>walking two sequences in step</td><td>Lists chapter</td></tr>
+<tr><td><code>sum</code>, <code>min</code>, <code>max</code></td><td>the accumulator patterns of §5, built in</td><td>Lists chapter — after you have written them yourself</td></tr>
+<tr><td>comprehensions</td><td><code>[f(x) for x in xs]</code> — a loop as a single expression</td><td>After lists and dictionaries</td></tr>
+<tr><td><code>for … else</code></td><td>a block that runs only if the loop was never <code>break</code>-ed</td><td>Mentioned with searching; rare in practice</td></tr>
+<tr><td><code>dict</code></td><td>lookup by key rather than by position</td><td>Dictionaries chapter</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Note the deliberate ordering of the third row. You will write your own totals and maxima for two chapters before being handed <code>sum()</code> and <code>max()</code>, so that when they arrive they are conveniences you understand rather than magic you depend on.</p>
+
+<div class="demo" id="loopDemo">
+  <div class="label">Step through a loop</div>
+  <p>The accumulator from §5, one iteration at a time. Watch <code>total</code> and <code>free_count</code> change, and note that the body runs top to bottom on every pass.</p>
+  <div class="demo-body">
+    <pre id="loopCode"></pre>
+    <div id="loopState"></div>
+    <div id="loopOut"></div>
+  </div>
+  <div class="demo-controls">
+    <button id="loopStep">Step</button>
+    <button id="loopReset">Reset</button>
+  </div>
+</div>
+
+<h2>Worked examples</h2>
+
+<h3>Rewriting Chapter 2 exercise 6</h3>
+
+<p>The instruction after the Chapter 2 review was not to patch its bugs but to rewrite it once iteration existed. Here is that rewrite, and the point is what becomes <em>impossible</em>.</p>
+
+<pre><code>orders <span class="o">=</span> (
+    (<span class="s">"ORD-6001"</span><span class="o">,</span> <span class="s">"buyer@shop.co"</span><span class="o">,</span> <span class="s">"2"</span><span class="o">,</span> <span class="s">"GB"</span><span class="o">,</span> <span class="s">"1240.00"</span><span class="o">,</span> <span class="n">3</span><span class="o">,</span> <span class="s">"GB"</span><span class="o">,</span> <span class="k">None</span>)<span class="o">,</span>
+    (<span class="s">"ORD-6002"</span><span class="o">,</span> <span class="s">"buyer.shop.co"</span><span class="o">,</span> <span class="s">"2"</span><span class="o">,</span> <span class="s">"GB"</span><span class="o">,</span> <span class="s">"200.00"</span><span class="o">,</span> <span class="n">400</span><span class="o">,</span> <span class="s">"GB"</span><span class="o">,</span> <span class="s">"07700900123"</span>)<span class="o">,</span>
+    (<span class="s">"ORD-6003"</span><span class="o">,</span> <span class="s">"buyer@shop.co"</span><span class="o">,</span> <span class="s">"1"</span><span class="o">,</span> <span class="s">"IE"</span><span class="o">,</span> <span class="s">"640.00"</span><span class="o">,</span> <span class="n">90</span><span class="o">,</span> <span class="s">"IE"</span><span class="o">,</span> <span class="s">"07700900555"</span>)<span class="o">,</span>
+)
+
+ALLOWED <span class="o">=</span> (<span class="s">"GB"</span><span class="o">,</span> <span class="s">"IE"</span><span class="o">,</span> <span class="s">"FR"</span>)
+
+<span class="k">for</span> order_id<span class="o">,</span> email<span class="o">,</span> raw_qty<span class="o">,</span> dest<span class="o">,</span> raw_value<span class="o">,</span> age<span class="o">,</span> bill<span class="o">,</span> phone <span class="k">in</span> orders<span class="o">:</span>
+    qty <span class="o">=</span> <span class="f">int</span>(raw_qty)
+    value <span class="o">=</span> <span class="f">float</span>(raw_value)
+
+    <span class="k">if</span> <span class="s">"@"</span> <span class="k">not</span> <span class="k">in</span> email<span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f"</span>{order_id}<span class="s">  </span>{<span class="s">'REJECTED'</span><span class="o">:</span>&lt;12}<span class="s">email address is not valid"</span>)
+        <span class="k">continue</span>
+    <span class="k">if</span> qty <span class="o">&lt;=</span> <span class="n">0</span><span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f"</span>{order_id}<span class="s">  </span>{<span class="s">'REJECTED'</span><span class="o">:</span>&lt;12}<span class="s">quantity must be at least 1"</span>)
+        <span class="k">continue</span>
+    <span class="k">if</span> dest <span class="k">not</span> <span class="k">in</span> ALLOWED<span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f"</span>{order_id}<span class="s">  </span>{<span class="s">'REJECTED'</span><span class="o">:</span>&lt;12}<span class="s">we do not ship to </span>{dest}<span class="s">"</span>)
+        <span class="k">continue</span>
+
+    points <span class="o">=</span> <span class="n">0</span>
+    <span class="k">if</span> age <span class="o">&lt;</span> <span class="n">7</span><span class="o">:</span>
+        points <span class="o">+=</span> <span class="n">30</span>
+    <span class="k">if</span> value <span class="o">&gt;</span> <span class="n">1000</span><span class="o">:</span>
+        points <span class="o">+=</span> <span class="n">25</span>
+    <span class="k">if</span> bill <span class="o">!=</span> dest<span class="o">:</span>
+        points <span class="o">+=</span> <span class="n">20</span>
+    <span class="k">if</span> phone <span class="k">is</span> <span class="k">None</span><span class="o">:</span>
+        points <span class="o">+=</span> <span class="n">15</span>
+
+    <span class="k">if</span> points <span class="o">&gt;=</span> <span class="n">50</span><span class="o">:</span>
+        route <span class="o">=</span> <span class="s">"HOLD"</span>
+    <span class="k">elif</span> points <span class="o">&gt;=</span> <span class="n">25</span><span class="o">:</span>
+        route <span class="o">=</span> <span class="s">"REVIEW"</span>
+    <span class="k">else</span><span class="o">:</span>
+        route <span class="o">=</span> <span class="s">"SHIP"</span>
+
+    total <span class="o">=</span> value <span class="o">+</span> (<span class="n">0.0</span> <span class="k">if</span> value <span class="o">&gt;=</span> <span class="n">500</span> <span class="k">else</span> <span class="n">7.95</span>)
+    <span class="f">print</span>(<span class="s">f"</span>{order_id}<span class="s">  </span>{route<span class="o">:</span>&lt;12}<span class="s">risk </span>{points<span class="o">:</span>&gt;3}<span class="s">   </span>{total<span class="o">:</span>&gt;9,.2f}<span class="s">"</span>)</code></pre>
+<div class="out">ORD-6001  HOLD        risk  70    1,240.00
+ORD-6002  REJECTED    email address is not valid
+ORD-6003  SHIP        risk   0      640.00</div>
+
+<p><strong>Byte-identical output to the Chapter 2 submission, in a third of the lines.</strong> But look at what changed structurally:</p>
+
+<ul>
+  <li>There is no <code>b_</code> anything, so <code>a_shipping_destinations</code> guarding order B is not a bug you could write. The name <code>dest</code> refers to <em>this</em> order because there is only ever one order in scope.</li>
+  <li><code>bill != dest</code> appears once. The Chapter 2 version had it three times and got it wrong once.</li>
+  <li>The allowed countries are stated once, as <code>ALLOWED</code>, in capitals — the convention for a value that is fixed policy rather than working data.</li>
+  <li>The three rejections use <code>continue</code> rather than a long <code>elif</code> chain wrapping the whole body in an <code>else</code>. Each check reads as a guard: <em>fail, say why, move on</em>. The scoring code below sits at one indentation level instead of two.</li>
+</ul>
+
+<p>Adding a fourth order is now one line of data. In Chapter 2's version it was thirty lines of logic and, on the evidence, a fair chance of one more bug.</p>
+
+<h3>A stock reconciliation report</h3>
+
+<p>Combining tuples, a loop, accumulators and Chapter 1's formatting into something that looks like real output. Warehouse counts against system counts; report every discrepancy and summarise.</p>
+
+<pre><code>counts <span class="o">=</span> (
+    (<span class="s">"SKU-101"</span><span class="o">,</span> <span class="n">120</span><span class="o">,</span> <span class="n">120</span>)<span class="o">,</span>
+    (<span class="s">"SKU-102"</span><span class="o">,</span> <span class="n">48</span><span class="o">,</span> <span class="n">51</span>)<span class="o">,</span>
+    (<span class="s">"SKU-103"</span><span class="o">,</span> <span class="n">17</span><span class="o">,</span> <span class="n">9</span>)<span class="o">,</span>
+    (<span class="s">"SKU-104"</span><span class="o">,</span> <span class="n">200</span><span class="o">,</span> <span class="n">200</span>)<span class="o">,</span>
+)
+
+<span class="f">print</span>(<span class="s">f"</span>{<span class="s">'SKU'</span><span class="o">:</span>&lt;10}{<span class="s">'SYSTEM'</span><span class="o">:</span>&gt;8}{<span class="s">'COUNTED'</span><span class="o">:</span>&gt;9}{<span class="s">'DIFF'</span><span class="o">:</span>&gt;7}<span class="s">"</span>)
+<span class="f">print</span>(<span class="s">"-"</span> <span class="o">*</span> <span class="n">34</span>)
+
+discrepancies <span class="o">=</span> <span class="n">0</span>
+net <span class="o">=</span> <span class="n">0</span>
+
+<span class="k">for</span> sku<span class="o">,</span> system<span class="o">,</span> counted <span class="k">in</span> counts<span class="o">:</span>
+    diff <span class="o">=</span> counted <span class="o">-</span> system
+    <span class="k">if</span> diff <span class="o">==</span> <span class="n">0</span><span class="o">:</span>
+        <span class="k">continue</span>
+    discrepancies <span class="o">+=</span> <span class="n">1</span>
+    net <span class="o">+=</span> diff
+    <span class="f">print</span>(<span class="s">f"</span>{sku<span class="o">:</span>&lt;10}{system<span class="o">:</span>&gt;8}{counted<span class="o">:</span>&gt;9}{diff<span class="o">:</span>&gt;+7}<span class="s">"</span>)
+
+<span class="f">print</span>(<span class="s">"-"</span> <span class="o">*</span> <span class="n">34</span>)
+<span class="k">if</span> discrepancies <span class="o">==</span> <span class="n">0</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">"all lines agree"</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f"</span>{discrepancies}<span class="s"> of </span>{<span class="f">len</span>(counts)}<span class="s"> lines disagree, net </span>{net<span class="o">:</span>+}<span class="s"> units"</span>)</code></pre>
+<div class="out">SKU         SYSTEM  COUNTED   DIFF
+----------------------------------
+SKU-102         48       51     +3
+SKU-103         17        9     -8
+----------------------------------
+2 of 4 lines disagree, net -5 units</div>
+
+<p>Three things worth noticing. The <code>continue</code> handles "nothing to report" before any reporting work happens, so the loop body below it deals only with the interesting case. The two accumulators are initialised before the loop and used after it — the pattern from §5, twice in one program. And <code>:+</code> is a format specifier you have not seen: it forces an explicit sign, so <code>+3</code> and <code>-8</code> line up as a column of signed numbers, which is exactly what a discrepancy report wants.</p>
+
+<h3>Finding the first failure, and why <code>break</code> matters</h3>
+
+<p>A dispatch run stops at the first order it cannot fulfil. Everything after it waits.</p>
+
+<pre><code>queue <span class="o">=</span> (
+    (<span class="s">"ORD-9001"</span><span class="o">,</span> <span class="n">4</span><span class="o">,</span> <span class="n">10</span>)<span class="o">,</span>
+    (<span class="s">"ORD-9002"</span><span class="o">,</span> <span class="n">3</span><span class="o">,</span> <span class="n">6</span>)<span class="o">,</span>
+    (<span class="s">"ORD-9003"</span><span class="o">,</span> <span class="n">9</span><span class="o">,</span> <span class="n">3</span>)<span class="o">,</span>
+    (<span class="s">"ORD-9004"</span><span class="o">,</span> <span class="n">1</span><span class="o">,</span> <span class="n">3</span>)<span class="o">,</span>
+)
+
+dispatched <span class="o">=</span> <span class="n">0</span>
+blocked_on <span class="o">=</span> <span class="k">None</span>
+
+<span class="k">for</span> order_id<span class="o">,</span> wanted<span class="o">,</span> in_stock <span class="k">in</span> queue<span class="o">:</span>
+    <span class="k">if</span> wanted <span class="o">&gt;</span> in_stock<span class="o">:</span>
+        blocked_on <span class="o">=</span> order_id
+        <span class="k">break</span>
+    dispatched <span class="o">+=</span> <span class="n">1</span>
+    <span class="f">print</span>(<span class="s">f"</span>{order_id}<span class="s">: dispatched </span>{wanted}<span class="s"> units"</span>)
+
+<span class="k">if</span> blocked_on <span class="k">is</span> <span class="k">None</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f"whole queue cleared — </span>{dispatched}<span class="s"> orders"</span>)
+<span class="k">else</span><span class="o">:</span>
+    waiting <span class="o">=</span> <span class="f">len</span>(queue) <span class="o">-</span> dispatched
+    <span class="f">print</span>(<span class="s">f"stopped at </span>{blocked_on}<span class="s"> — </span>{dispatched}<span class="s"> dispatched, </span>{waiting}<span class="s"> waiting"</span>)</code></pre>
+<div class="out">ORD-9001: dispatched 4 units
+ORD-9002: dispatched 3 units
+stopped at ORD-9003 — 2 dispatched, 2 waiting</div>
+
+<p>ORD-9004 wants only 1 unit and 3 are in stock, so it could have been filled — but it is not, because <code>break</code> ended the loop at ORD-9003 and a dispatch run is sequential. That rule takes one keyword to express.</p>
+
+<p>Swap that <code>break</code> for <code>continue</code> and the program answers a different question entirely: <em>which orders can be filled right now, ignoring queue order</em>. Both are reasonable systems, and they put different goods on the van. The keyword is not a detail of style — it <em>is</em> the business rule.</p>
+
+<p>Note also <code>blocked_on = None</code> before the loop, tested with <code>is None</code> after it. That is how you distinguish "the loop finished normally" from "the loop stopped early", and it is the same sentinel technique as the maximum-finder in &sect;5.</p>
+
+<h2>What this chapter established</h2>
+
+<ul>
+  <li><strong>Tuples</strong> — <code>(a, b, c)</code>, one value holding several in order; <code>len()</code>; indexing from <code>0</code> and from <code>-1</code>; <code>IndexError</code>; immutability; the one-item comma; nesting.</li>
+  <li><strong>Packing and unpacking</strong> — <code>a, b = 1, 2</code> explained at last, the count rule, and the swap.</li>
+  <li><strong>Membership</strong> — <code>in</code> and <code>not in</code> against a tuple, replacing chains of <code>or</code>.</li>
+  <li><strong><code>for</code></strong> — the loop name, the body, iteration, looping over tuples and strings, unpacking in the header.</li>
+  <li><strong>The accumulator pattern</strong> — initialise before, update inside, use after; sums, counts and maxima; why the starting value is a decision.</li>
+  <li><strong><code>range</code></strong> — one, two and three argument forms; the exclusive end and why it is right; <code>range(len(x))</code> with indexing.</li>
+  <li><strong><code>while</code></strong> — condition-driven repetition, infinite loops, and how to choose between the two loops.</li>
+  <li><strong><code>break</code> and <code>continue</code></strong> — leaving early, skipping an item, and the guard-clause shape.</li>
+  <li><strong>Nested loops</strong> — and the multiplication of work they imply.</li>
+</ul>
+
+<nav class="chapter-foot">
+  <a href="../chapter_02_order_routing/content.html" class="prv"><span class="dir">Previous</span>← Chapter 2</a>
+  <a href="exercises.html" class="nxt"><span class="dir">Next</span>Exercises →</a>
+</nav>
+
+</main>
+
+<script>
+(function () {
+  var VALUES = [642.50, 120.00, 500.00];
+  var LINES = [
+    "values = (642.50, 120.00, 500.00)",
+    "total = 0.0",
+    "free_count = 0",
+    "",
+    "for value in values:",
+    "    total += value",
+    "    if value >= 500:",
+    "        free_count += 1",
+    "",
+    "print(f\"{len(values)} orders, {free_count} shipping free, total {total:,.2f}\")"
+  ];
+  var step = 0;
+  var codeEl = document.getElementById("loopCode");
+  var stateEl = document.getElementById("loopState");
+  var outEl = document.getElementById("loopOut");
+  if (!codeEl) { return; }
+
+  function money(n) {
+    var s = n.toFixed(2);
+    var parts = s.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  }
+
+  function stateAt(s) {
+    var total = 0, free = 0, i;
+    var passes = Math.min(s, VALUES.length);
+    for (i = 0; i < passes; i++) {
+      total += VALUES[i];
+      if (VALUES[i] >= 500) { free += 1; }
+    }
+    return { total: total, free: free, passes: passes };
+  }
+
+  function render() {
+    var st = stateAt(step);
+    var active = -1;
+    if (step === 0) { active = 1; }
+    else if (step <= VALUES.length) { active = 5; }
+    else { active = 9; }
+
+    var html = "";
+    for (var i = 0; i < LINES.length; i++) {
+      var line = LINES[i].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      html += (i === active ? "<mark>" + (line || " ") + "</mark>" : (line || " ")) + "\n";
+    }
+    codeEl.innerHTML = html;
+
+    var label;
+    if (step === 0) { label = "before the loop"; }
+    else if (step <= VALUES.length) { label = "after iteration " + step + " — value was " + VALUES[step - 1].toFixed(2); }
+    else { label = "loop finished, all 3 items consumed"; }
+
+    stateEl.innerHTML =
+      "<p><em>" + label + "</em></p>" +
+      "<p><code>total</code> = " + st.total.toFixed(2) +
+      " &nbsp;·&nbsp; <code>free_count</code> = " + st.free + "</p>";
+
+    outEl.innerHTML = step > VALUES.length
+      ? "<p><strong>output:</strong> <code>3 orders, " + st.free + " shipping free, total " + money(st.total) + "</code></p>"
+      : "<p><strong>output:</strong> <em>nothing printed yet</em></p>";
+  }
+
+  document.getElementById("loopStep").onclick = function () {
+    if (step <= VALUES.length) { step += 1; render(); }
+  };
+  document.getElementById("loopReset").onclick = function () { step = 0; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

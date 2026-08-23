@@ -4,7 +4,7 @@ Running index of every concept, function, and structure **formally taught** so f
 If something feels unfamiliar during an exercise and it is not listed here, that is
 a syllabus gap, not a personal one — flag it.
 
-Last updated: after Chapter 2. Chapter 1 amended 2026-08-20 — string
+Last updated: after Chapter 3. Chapter 1 amended 2026-08-20 — string
 repetition and literals-in-braces added after gaps were flagged in the Ch.1 review.
 
 ---
@@ -102,6 +102,60 @@ repetition and literals-in-braces added after gaps were flagged in the Ch.1 revi
 - Conditional expression: `A if cond else B`
 - `in` / `not in` for substring tests (case-sensitive, any position)
 
+### Chapter 3 — Doing It Once for Every Order
+
+**Tuples**
+- `(a, b, c)` — one value holding several, in order; type `tuple`
+- `len(x)` — item count, also works on strings; empty tuple `()` is falsy
+- Indexing `t[0]`, counting from zero; negative indices from the end
+- `IndexError` when the position does not exist
+- Immutability: `t[0] = x` raises `TypeError`
+- The one-item comma: `("GB",)` is a tuple, `("GB")` is a string
+- Nesting: a tuple of tuples as a table of rows
+
+**Packing and unpacking**
+- `a, b = 1, 2` — packing on the right, unpacking on the left (closes the
+  used-before-taught gap from Ch.2)
+- Count must match; `ValueError: too many values to unpack`
+- The swap `a, b = b, a`, and why it works
+
+**Membership**
+- `in` / `not in` against a tuple — replaces chains of `or`
+- Distinct from `in` on a string, which tests for a substring
+
+**Iteration**
+- `for name in sequence:` — the loop name, the body, one iteration per item
+- Looping over tuples and over strings
+- Unpacking in the loop header: `for a, b, c in rows:`
+- The loop name persists after the loop ends
+- Nested loops, and the multiplication of work they imply
+
+**The accumulator pattern**
+- Initialise before the loop, update inside, use after
+- Sums, counts, and running maxima; `+=` as the core move
+- The starting value as a real decision (`0`, `0.0`, `""`, `None`)
+- `None` as a sentinel for "nothing seen yet", tested with `is None`
+
+**`range`**
+- `range(stop)`, `range(start, stop)`, `range(start, stop, step)`
+- Exclusive end, and why it makes `range(len(x))` exactly the valid indices
+- When to prefer a direct `for` over `range(len(...))`
+
+**`while`**
+- Condition checked before each iteration; may run zero times
+- Infinite loops, `Ctrl+C` and `KeyboardInterrupt`
+- Choosing `for` versus `while`
+
+**Flow control inside loops**
+- `break` — abandon the loop; `continue` — abandon this iteration
+- Guard-clause shape: check, report, `continue`
+- Both affect only the innermost loop
+
+**Formatting**
+- `:+` — force an explicit sign, for signed columns
+
+---
+
 ---
 
 ## Known siblings, deliberately deferred
@@ -111,14 +165,21 @@ These exist, are real, and are coming — they are not gaps.
 | Concept | Sibling tools not yet taught | Planned for |
 |---------|------------------------------|-------------|
 | Money arithmetic | `decimal.Decimal`; integer-pennies as a standing pattern | Modules chapter (Decimal); pennies pattern introduced informally in Ch.1 Ex.6 |
-| Repetition | `for`, `while`, `break`, `continue` | Chapter 3 |
+| ~~Repetition~~ | ~~`for`, `while`, `break`, `continue`~~ | **Taught in Chapter 3** |
 | Multi-way dispatch | `match` statement (3.10+) | After data structures |
-| Membership of several options | `x in (a, b, c)` | Chapter 3 (tuples) |
+| ~~Membership of several options~~ | ~~`x in (a, b, c)`~~ | **Taught in Chapter 3** |
 | Float comparison | `math.isclose()` | Modules chapter |
 | String methods | `.strip()`, `.split()`, `.upper()`, `.replace()`, indexing, slicing | Strings chapter |
 | Functions | `def`, parameters, `return`, scope | Functions chapter |
 | Older string formatting | `%` formatting, `str.format()` | Mentioned when f-strings are revisited; f-strings are the modern default |
-| Multiple assignment | `a, b = 1, 2` — tuple packing/unpacking | **Used in Ch.2 exercise specs before being taught; formally taught in Ch.3 with tuples** |
+| ~~Multiple assignment~~ | ~~`a, b = 1, 2`~~ | **Taught in Chapter 3** — the Ch.2 gap is closed |
+| Sequences that change | `list`, `.append()`, indexing assignment | Lists chapter (next) |
+| Index with item | `enumerate()` | Lists chapter |
+| Two sequences in step | `zip()` | Lists chapter |
+| Built-in accumulators | `sum()`, `min()`, `max()`, `sorted()` | Lists chapter — after writing them by hand |
+| Loop as an expression | comprehensions | After lists and dictionaries |
+| Loop with no `break` | `for … else` | Mentioned with searching |
+| Lookup by key | `dict` | Dictionaries chapter |
 | Input | `input()` | Deferred — exercises use fixed values so grading stays deterministic |
 
 ---
