@@ -18,7 +18,7 @@ d_destination_allowed = d_dest == "GB" or d_dest == "IE" or d_dest == "FR"
 
 
 if "@" not in a_email:
-    print(f"{a_id}: REJECTED - email address is not valid") 
+    print(f"{a_id}: REJECTED - email address is not valid")
 elif a_qty <= 0:
     print(f"{a_id}: REJECTED - quantity must be at least 1")
 elif not a_destination_allowed:
@@ -27,7 +27,7 @@ else:
     print(f"{a_id}: ACCEPTED - {a_qty} units to {a_dest}")
 
 if "@" not in b_email:
-    print(f"{b_id}: REJECTED - email address is not valid") 
+    print(f"{b_id}: REJECTED - email address is not valid")
 elif b_qty <= 0:
     print(f"{b_id}: REJECTED - quantity must be at least 1")
 elif not b_destination_allowed:
@@ -36,16 +36,16 @@ else:
     print(f"{b_id}: ACCEPTED - {b_qty} units to {b_dest}")
 
 if "@" not in c_email:
-    print(f"{c_id}: REJECTED - email address is not valid") 
+    print(f"{c_id}: REJECTED - email address is not valid")
 elif c_qty <= 0:
     print(f"{c_id}: REJECTED - quantity must be at least 1")
 elif not c_destination_allowed:
     print(f"{c_id}: REJECTED - we do not ship to {c_dest}")
 else:
     print(f"{c_id}: ACCEPTED - {c_qty} units to {c_dest}")
-    
+
 if "@" not in d_email:
-    print(f"{d_id}: REJECTED - email address is not valid") 
+    print(f"{d_id}: REJECTED - email address is not valid")
 elif d_qty <= 0:
     print(f"{d_id}: REJECTED - quantity must be at least 1")
 elif not d_destination_allowed:
