@@ -8,9 +8,9 @@ a_value = float(a_raw)
 b_value = float(b_raw)
 c_value = float(c_raw)
 
-#a loop
+#one block per order
 if a_value >= 500:
-    a_shipping_cost = 0
+    a_shipping_cost = 0.00
     a_band = "FREE"
 elif a_value >= 100:
     a_shipping_cost = 3.95
@@ -22,9 +22,9 @@ else:
     a_shipping_cost = 7.95
     a_band = "MINIMUM"
 
-#b loop
+#one block per order
 if b_value >= 500:
-    b_shipping_cost = 0
+    b_shipping_cost = 0.00
     b_band = "FREE"
 elif b_value >= 100:
     b_shipping_cost = 3.95
@@ -36,9 +36,9 @@ else:
     b_shipping_cost = 7.95
     b_band = "MINIMUM"
 
-#c loop
+#one block per order
 if c_value >= 500:
-    c_shipping_cost = 0
+    c_shipping_cost = 0.00
     c_band = "FREE"
 elif c_value >= 100:
     c_shipping_cost = 3.95
