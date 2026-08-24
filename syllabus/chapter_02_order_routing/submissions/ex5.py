@@ -8,9 +8,6 @@ a_value = float(a_raw_value)
 b_value = float(b_raw_value)
 c_value = float(c_raw_value)
 
-a_handling = ""
-a_handling = ""
-a_handling = ""
 
 if a_raw_w is None:
     a_handling = "WEIGH"
@@ -47,10 +44,6 @@ else:
         c_handling = "STANDARD"
 
 
-a_priority = ""
-b_priority = ""
-c_priority = ""
-
 if a_value >= 1000:
     a_priority = "EXPRESS"
 elif a_value >= 100:
@@ -79,15 +72,15 @@ is_c_domestic = "Y" if c_dest == "GB" else "N"
 if a_raw_w is not None:
     print(f"{a_sku}{a_w:>6.1f}  {a_handling:<12}{a_priority:<10}{is_a_domestic}")
 else:
-    print(f"{a_sku}{'  --  '}  {a_handling:<12}{a_priority:<10}{is_a_domestic}")
+    print(f"{a_sku}{'--':^6}  {a_handling:<12}{a_priority:<10}{is_a_domestic}")
 if b_raw_w is not None:
     print(f"{b_sku}{b_w:>6.1f}  {b_handling:<12}{b_priority:<10}{is_b_domestic}")
 else:
-    print(f"{b_sku}{'  --  '}  {b_handling:<12}{b_priority:<10}{is_b_domestic}")
+    print(f"{b_sku}{'--':^6}  {b_handling:<12}{b_priority:<10}{is_b_domestic}")
 if c_raw_w is not None:
     print(f"{c_sku}{c_w:>6.1f}  {c_handling:<12}{c_priority:<10}{is_c_domestic}")
 else:
-    print(f"{c_sku}{'  --  '}  {c_handling:<12}{c_priority:<10}{is_c_domestic}")
+    print(f"{c_sku}{'--':^6}  {c_handling:<12}{c_priority:<10}{is_c_domestic}")
 
 
 
