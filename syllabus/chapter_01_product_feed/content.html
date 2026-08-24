@@ -279,9 +279,11 @@ leftover   <span class="o">=</span> units <span class="o">%</span>  box_size
 <pre><code><span class="f">print</span>(<span class="n">4.99</span> <span class="o">+</span> <span class="n">4.99</span> <span class="o">*</span> <span class="n">0.20</span>)      <span class="c"># tax on the cost, then added</span>
 <span class="f">print</span>((<span class="n">4.99</span> <span class="o">+</span> <span class="n">4.99</span>) <span class="o">*</span> <span class="n">0.20</span>)    <span class="c"># tax on double the cost — different thing</span></code></pre>
 <div class="out">5.988
-1.996</div>
+1.9960000000000002</div>
 
 <p>Use parentheses whenever the grouping is not instantly obvious to a reader, even where they are technically unnecessary. Being right is not enough; being unambiguously right matters in code others maintain.</p>
+
+<p>And note the second line: <code>1.9960000000000002</code>, not <code>1.996</code>. That is not a mistake in the arithmetic and it is not a typo — it is the single most important thing to understand about decimals in any programming language, and &sect;7 is entirely about it.</p>
 
 <h4>Augmented assignment</h4>
 
@@ -398,13 +400,13 @@ ababab</div>
 </div>
 
 <pre><code>name <span class="o">=</span> <span class="s">"Blue Mug"</span>
-cost <span class="o">=</span> <span class="n">4.99</span>
+cost <span class="o">=</span> <span class="n">4.35</span>
 qty  <span class="o">=</span> <span class="n">3</span>
 
 <span class="f">print</span>(<span class="s">f"</span>{name}<span class="s"> x</span>{qty}<span class="s"> at £</span>{cost}<span class="s">"</span>)
 <span class="f">print</span>(<span class="s">f"Line total: £</span>{cost <span class="o">*</span> qty}<span class="s">"</span>)</code></pre>
-<div class="out">Blue Mug x3 at £4.99
-Line total: £14.969999999999999</div>
+<div class="out">Blue Mug x3 at £4.35
+Line total: £13.049999999999999</div>
 
 <p>Note three things. First, no <code>str()</code> conversion was needed — the f-string handles it. Second, arbitrary expressions work inside the braces, not just names: <code>{cost * qty}</code> did real arithmetic. And third — the float problem from §7 arrived exactly as promised.</p>
 
@@ -435,11 +437,11 @@ Loose&nbsp;units:&nbsp;&nbsp;&nbsp;7</div>
 
 <p>Inside the braces you may add a colon followed by a <strong>format specifier</strong> controlling how the value is rendered:</p>
 
-<pre><code>cost <span class="o">=</span> <span class="n">4.99</span>
+<pre><code>cost <span class="o">=</span> <span class="n">4.35</span>
 qty  <span class="o">=</span> <span class="n">3</span>
 
 <span class="f">print</span>(<span class="s">f"Line total: £</span>{cost <span class="o">*</span> qty<span class="o">:</span>.2f}<span class="s">"</span>)</code></pre>
-<div class="out">Line total: £14.97</div>
+<div class="out">Line total: £13.05</div>
 
 <p>The specifier <code>.2f</code> means: render as a <strong>f</strong>ixed-point decimal with exactly <strong>2</strong> places. Crucially it rounds for display <em>and always shows both places</em> — so <code>5.0</code> renders as <code>5.00</code>, which <code>round(5.0, 2)</code> would not give you.</p>
 
@@ -447,18 +449,28 @@ qty  <span class="o">=</span> <span class="n">3</span>
 <table>
 <thead><tr><th>Specifier</th><th>Meaning</th><th>Input</th><th>Output</th></tr></thead>
 <tbody>
-<tr><td><code>.2f</code></td><td>Fixed-point, 2 decimals</td><td><code>14.969…</code></td><td><code>14.97</code></td></tr>
-<tr><td><code>.0f</code></td><td>Fixed-point, no decimals</td><td><code>14.97</code></td><td><code>15</code></td></tr>
+<tr><td><code>.2f</code></td><td>Fixed-point, 2 decimals</td><td><code>13.049…</code></td><td><code>13.05</code></td></tr>
+<tr><td><code>.0f</code></td><td>Fixed-point, no decimals</td><td><code>13.05</code></td><td><code>13</code></td></tr>
 <tr><td><code>,</code></td><td>Thousands separators</td><td><code>1250000</code></td><td><code>1,250,000</code></td></tr>
 <tr><td><code>,.2f</code></td><td>Both combined</td><td><code>1250.5</code></td><td><code>1,250.50</code></td></tr>
 <tr><td><code>&gt;10</code></td><td>Right-align in 10 characters</td><td><code>"Mug"</code></td><td><code>"·······Mug"</code></td></tr>
 <tr><td><code>&lt;10</code></td><td>Left-align in 10 characters</td><td><code>"Mug"</code></td><td><code>"Mug·······"</code></td></tr>
+<tr><td><code>^10</code></td><td>Centre in 10 characters</td><td><code>"Mug"</code></td><td><code>"···Mug····"</code></td></tr>
 <tr><td><code>.1%</code></td><td>As a percentage, 1 decimal</td><td><code>0.205</code></td><td><code>20.5%</code></td></tr>
 </tbody>
 </table>
 </div>
 
 <p>(The <code>·</code> above represents a space; it is not printed.) Alignment specifiers are what let you produce column-aligned reports without counting spaces by hand — you will use them in the exercises.</p>
+
+<p>Three alignments, one for each thing you might want. <code>&lt;</code> pushes the value to the left of its field, <code>&gt;</code> to the right, and <code>^</code> centres it, splitting the leftover space either side and giving the extra character to the right when it will not divide evenly. Numbers are conventionally right-aligned so their digits line up by place value; text is conventionally left-aligned so it reads down the column; centring is for the occasional short marker sitting in a wide column — a placeholder, a flag, a heading over narrow data.</p>
+
+<pre><code><span class="f">print</span>(<span class="s">f"|</span>{<span class="s">'--'</span><span class="o">:</span>^6}<span class="s">|"</span>)
+<span class="f">print</span>(<span class="s">f"|</span>{<span class="s">'  --  '</span>}<span class="s">|"</span>)</code></pre>
+<div class="out">|&nbsp;&nbsp;--&nbsp;&nbsp;|
+|&nbsp;&nbsp;--&nbsp;&nbsp;|</div>
+
+<p>Those two lines print the same six characters, and the difference is entirely in what a reader learns from them. The first says <em>this column is six wide and the marker sits in the middle of it</em>. The second says <em>somebody counted</em> — and it silently becomes wrong the moment the column width changes, with nothing to point at the reason.</p>
 
 <div class="aside">
   <span class="label">Rounding vs. formatting</span>

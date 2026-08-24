@@ -58,7 +58,8 @@ repetition and literals-in-braces added after gaps were flagged in the Ch.1 revi
 - f-strings: `f"…{expression}…"`
 - Literals inside the braces: `f"{'PRODUCT':<20}"`; quote nesting (single inside
   double); padding the *label* to a fixed width instead of retuning the number's
-- Format specifiers: `.2f`, `.0f`, `,`, `,.2f`, `>n`, `<n`, `.1%`
+- Format specifiers: `.2f`, `.0f`, `,`, `,.2f`, `>n`, `<n`, `^n` (centre), `.1%`
+- Which alignment to use: numbers right, text left, short markers centred
 - Rounding (changes the value) vs formatting (changes the display)
 
 **Errors**
