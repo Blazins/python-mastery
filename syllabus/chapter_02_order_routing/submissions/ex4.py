@@ -39,28 +39,25 @@ if c_bill != c_ship_to:
 if c_phone is None:
     c_points += 15
 
-a_route = ""
-b_route = ""
-c_route = ""
 
-if a_points >= 50:
-    a_route = "HOLD" #holds the order
-elif a_points >= 25:
-    a_route = "REVIEW" #flags for review
-else:
+if a_points >= 50: #50 or above holds the order
+    a_route = "HOLD" 
+elif a_points >= 25: #25 to 49 flags for review
+    a_route = "REVIEW" 
+else: #below 25 ships 
     a_route = "SHIP"
 
 if b_points >= 50:
-    b_route = "HOLD" #holds the order
+    b_route = "HOLD"
 elif b_points >= 25:
-    b_route = "REVIEW" #flags for review
-else:
+    b_route = "REVIEW"
+else: 
     b_route = "SHIP"
 
 if c_points >= 50:
-    c_route = "HOLD" #holds the order
+    c_route = "HOLD" 
 elif c_points >= 25:
-    c_route = "REVIEW" #flags for review
+    c_route = "REVIEW"
 else:
     c_route = "SHIP"
 
