@@ -12,15 +12,15 @@ a_qty = int(a_raw_qty)
 b_qty = int(b_raw_qty)
 c_qty = int(c_raw_qty)
 
-a_shipping_destinations = a_dest == "GB" or a_dest == "IE" or a_dest == "FR"
-b_shipping_destinations = b_dest == "GB" or b_dest == "IE" or b_dest == "FR"
-c_shipping_destinations = c_dest == "GB" or c_dest == "IE" or c_dest == "FR"
+a_ships_to = a_dest == "GB" or a_dest == "IE" or a_dest == "FR"
+b_ships_to = b_dest == "GB" or b_dest == "IE" or b_dest == "FR"
+c_ships_to = c_dest == "GB" or c_dest == "IE" or c_dest == "FR"
 
 if "@" not in a_email:
     print(f"{a_id}  {'REJECTED':<12}email address is not valid") 
 elif a_qty <= 0:
     print(f"{a_id}  {'REJECTED':<12}quantity must be at least 1")
-elif not a_shipping_destinations:
+elif not a_ships_to:
     print(f"{a_id}  {'REJECTED':<12}we do not ship to {a_dest}")
 else:
     a_points = 0
@@ -50,7 +50,7 @@ if "@" not in b_email:
     print(f"{b_id}  {'REJECTED':<12}email address is not valid") 
 elif b_qty <= 0:
     print(f"{b_id}  {'REJECTED':<12}quantity must be at least 1")
-elif not a_shipping_destinations:
+elif not b_ships_to:
     print(f"{b_id}  {'REJECTED':<12}we do not ship to {b_dest}")
 else:
     b_points = 0
@@ -59,7 +59,7 @@ else:
         b_points += 30
     if b_value > 1000:
         b_points += 25
-    if b_bill != a_dest:
+    if b_bill != b_dest:
         b_points += 20
     if b_phone is None:
         b_points += 15
@@ -80,7 +80,7 @@ if "@" not in c_email:
     print(f"{c_id}  {'REJECTED':<12}email address is not valid") 
 elif c_qty <= 0:
     print(f"{c_id}  {'REJECTED':<12}quantity must be at least 1")
-elif not c_shipping_destinations:
+elif not c_ships_to:
     print(f"{c_id}  {'REJECTED':<12}we do not ship to {c_dest}")
 else:
     c_points = 0
