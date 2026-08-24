@@ -14,11 +14,11 @@ d_order_value =  float(d_raw_value)
 if a_code is None:
     a_rate = 0.0
     a_reason_text = "no code supplied"
-    
+
 elif a_pct == "":
     a_rate = 0.0
     a_reason_text = "code has no percentage"
-   
+
 elif float(a_pct) <= 0:
     a_rate = 0.0
     a_reason_text = "percentage is zero"
@@ -53,7 +53,7 @@ elif b_order_value < 100.00:
 else:
     b_rate = float(b_pct)
     b_reason_text = "applied"
-    
+
 b_discount_amt = b_rate/100 * b_order_value
 b_amt_payable = b_order_value - b_discount_amt
 
