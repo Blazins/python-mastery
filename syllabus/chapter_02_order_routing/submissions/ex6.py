@@ -17,14 +17,14 @@ b_ships_to = b_dest == "GB" or b_dest == "IE" or b_dest == "FR"
 c_ships_to = c_dest == "GB" or c_dest == "IE" or c_dest == "FR"
 
 if "@" not in a_email:
-    print(f"{a_id}  {'REJECTED':<12}email address is not valid") 
+    print(f"{a_id}  {'REJECTED':<12}email address is not valid")
 elif a_qty <= 0:
     print(f"{a_id}  {'REJECTED':<12}quantity must be at least 1")
 elif not a_ships_to:
     print(f"{a_id}  {'REJECTED':<12}we do not ship to {a_dest}")
 else:
     a_points = 0
-    
+
     if a_age < 7:
         a_points += 30
     if a_value > 1000:
@@ -43,18 +43,18 @@ else:
 
     a_ship_cost = 0 if a_value >= 500 else 7.95
     a_total = a_value + a_ship_cost
-          
+
     print(f"{a_id}  {a_route:<12}risk {a_points:>3}   {a_total:>9,.2f}")
 
 if "@" not in b_email:
-    print(f"{b_id}  {'REJECTED':<12}email address is not valid") 
+    print(f"{b_id}  {'REJECTED':<12}email address is not valid")
 elif b_qty <= 0:
     print(f"{b_id}  {'REJECTED':<12}quantity must be at least 1")
 elif not b_ships_to:
     print(f"{b_id}  {'REJECTED':<12}we do not ship to {b_dest}")
 else:
     b_points = 0
-    
+
     if b_age < 7:
         b_points += 30
     if b_value > 1000:
@@ -73,18 +73,18 @@ else:
 
     b_ship_cost = 0 if b_value >= 500 else 7.95
     b_total = b_value + b_ship_cost
-          
+
     print(f"{b_id}  {b_route:<12}risk {b_points:>3}   {b_total:>9,.2f}")
 
 if "@" not in c_email:
-    print(f"{c_id}  {'REJECTED':<12}email address is not valid") 
+    print(f"{c_id}  {'REJECTED':<12}email address is not valid")
 elif c_qty <= 0:
     print(f"{c_id}  {'REJECTED':<12}quantity must be at least 1")
 elif not c_ships_to:
     print(f"{c_id}  {'REJECTED':<12}we do not ship to {c_dest}")
 else:
     c_points = 0
-    
+
     if c_age < 7:
         c_points += 30
     if c_value > 1000:
@@ -103,5 +103,5 @@ else:
 
     c_ship_cost = 0 if c_value >= 500 else 7.95
     c_total = c_value + c_ship_cost
-          
+
     print(f"{c_id}  {c_route:<12}risk {c_points:>3}   {c_total:>9,.2f}")

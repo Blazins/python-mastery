@@ -31,7 +31,7 @@ else:
         b_handling = "FRAGILE"
     else:
         b_handling = "STANDARD"
-    
+
 if c_raw_w is None:
     c_handling = "WEIGH"
 else:

@@ -41,21 +41,21 @@ if c_phone is None:
 
 
 if a_points >= 50: #50 or above holds the order
-    a_route = "HOLD" 
+    a_route = "HOLD"
 elif a_points >= 25: #25 to 49 flags for review
-    a_route = "REVIEW" 
-else: #below 25 ships 
+    a_route = "REVIEW"
+else: #below 25 ships
     a_route = "SHIP"
 
 if b_points >= 50:
     b_route = "HOLD"
 elif b_points >= 25:
     b_route = "REVIEW"
-else: 
+else:
     b_route = "SHIP"
 
 if c_points >= 50:
-    c_route = "HOLD" 
+    c_route = "HOLD"
 elif c_points >= 25:
     c_route = "REVIEW"
 else:
