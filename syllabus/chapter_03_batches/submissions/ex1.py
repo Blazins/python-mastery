@@ -19,7 +19,7 @@ for order_id, raw_value in orders:
     value = float(raw_value)
     if value >= 500:
         band = "FREE"
-        cost = 0
+        cost = 0.00
     elif value >= 100:
         band = "STANDARD"
         cost = 3.95
@@ -39,4 +39,4 @@ for order_id, raw_value in orders:
 
 
 print("-" * 50)
-print(f"{len(orders):} orders   goods {cum_value:,.2f}   shipping {cum_cost:,.2f}   total {cum_total:,.2f}")
+print(f"{len(orders)} orders   goods {cum_value:,.2f}   shipping {cum_cost:,.2f}   total {cum_total:,.2f}")
