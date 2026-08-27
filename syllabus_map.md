@@ -176,6 +176,7 @@ These exist, are real, and are coming — they are not gaps.
 | ~~Multiple assignment~~ | ~~`a, b = 1, 2`~~ | **Taught in Chapter 3** — the Ch.2 gap is closed |
 | Sequences that change | `list`, `.append()`, indexing assignment | Lists chapter (next) |
 | Index with item | `enumerate()` | Lists chapter |
+| Finding a position by value | `.index()`, `.count()` | Lists chapter — `.index()` returns only the *first* match, so it does not solve repeat-detection |
 | Two sequences in step | `zip()` | Lists chapter |
 | Built-in accumulators | `sum()`, `min()`, `max()`, `sorted()` | Lists chapter — after writing them by hand |
 | Loop as an expression | comprehensions | After lists and dictionaries |
