@@ -4,7 +4,9 @@ Running index of every concept, function, and structure **formally taught** so f
 If something feels unfamiliar during an exercise and it is not listed here, that is
 a syllabus gap, not a personal one — flag it.
 
-Last updated: after Chapter 3. Chapter 1 amended 2026-08-20 — string
+Last updated: after the Chapter 3 review. Chapter 3 §9 expanded 2026-08-27 —
+index-based nested loops were required by Ex.3 but never taught; see review.
+Chapter 1 amended 2026-08-20 — string
 repetition and literals-in-braces added after gaps were flagged in the Ch.1 review.
 
 ---
@@ -129,7 +131,12 @@ repetition and literals-in-braces added after gaps were flagged in the Ch.1 revi
 - Looping over tuples and over strings
 - Unpacking in the loop header: `for a, b, c in rows:`
 - The loop name persists after the loop ends
-- Nested loops, and the multiplication of work they imply
+- Nested loops over two sequences, and the multiplication of work they imply
+- Nested loops over **one** sequence by index: `feed[i]` against `feed[j]`
+- An inner `range` whose bounds depend on the outer loop variable —
+  `range(i + 1, len(x))`, "every position after this one" — and why it removes
+  both self-comparison and duplicate pairs; `n × (n − 1) ÷ 2` comparisons
+- Pairwise scanning as a recognisable shape: duplicates, collisions, conflicts
 
 **The accumulator pattern**
 - Initialise before the loop, update inside, use after
