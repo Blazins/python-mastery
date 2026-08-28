@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix B · Git, Visualised</title>
+<link rel="stylesheet" href="../assets/textbook.css">
+<style>
+  .zone { border: 1px solid currentColor; border-radius: 6px; padding: .8rem 1rem 1rem;
+          margin: 0 0 .7rem; opacity: .95; }
+  .zone > .zt { font-size: .74rem; letter-spacing: .09em; text-transform: uppercase;
+                opacity: .6; margin-bottom: .1rem; }
+  .zone > .zs { font-size: .82rem; opacity: .62; margin-bottom: .75rem; font-style: italic; }
+  .chain { display: flex; align-items: flex-start; gap: 0; overflow-x: auto; padding-bottom: .2rem; }
+  .node { display: flex; flex-direction: column; align-items: center; min-width: 104px; }
+  .dot { width: 100%; text-align: center; font-family: var(--mono, ui-monospace, monospace);
+         font-size: .74rem; border: 1px solid currentColor; border-radius: 4px;
+         padding: .42rem .2rem; background: rgba(128,128,128,.08); }
+  .dot.tip { background: rgba(60,120,220,.20); font-weight: 700; }
+  .msg { font-size: .66rem; opacity: .55; text-align: center; margin-top: .2rem;
+         line-height: 1.25; max-width: 100px; }
+  .link { flex: 0 0 20px; text-align: center; opacity: .35; padding-top: .55rem; }
+  .refs { display: flex; flex-direction: column; gap: .2rem; margin-top: .4rem; align-items: center; }
+  .ref { font-family: var(--mono, ui-monospace, monospace); font-size: .68rem;
+         border: 1px solid currentColor; border-radius: 3px; padding: .1rem .34rem; white-space: nowrap; }
+  .ref.head { background: rgba(60,120,220,.24); font-weight: 700; }
+  .ref.stale { border-style: dashed; opacity: .55; }
+  .gap { border: 1px dashed currentColor; border-radius: 5px; padding: .55rem .8rem;
+         margin: .1rem 0 .8rem; font-size: .84rem; opacity: .85; }
+  .stepbar { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-top: .9rem; }
+  .stepcmd { font-family: var(--mono, ui-monospace, monospace); font-size: .84rem;
+             background: #26231f; color: #e8e2d6; padding: .5rem .8rem; border-radius: 4px;
+             display: inline-block; margin: .2rem 0 .6rem; }
+  .note { font-size: .92rem; line-height: 1.55; }
+  .counter { font-size: .78rem; opacity: .5; font-family: var(--mono, ui-monospace, monospace); }
+</style>
+</head>
+<body>
+<main class="page">
+
+<header class="chapter-head">
+  <div class="chapter-eyebrow">Appendix B</div>
+  <h1>Git, Visualised</h1>
+  <p class="chapter-standfirst">Appendix A explains git in prose. This one shows it moving. Step through the exact workflow you used for Chapter 3 — branch, commit, push, review, merge, pull — and watch the labels slide, diverge, and come back together.</p>
+</header>
+
+<h2>The one idea everything else rests on</h2>
+
+<p>A branch is not a folder and not a copy of your code. It is a <strong>41-byte file containing a commit id</strong> — a sticky note stuck on one commit in a chain. When you make a new commit, the note peels off and moves forward onto it.</p>
+
+<p>Every confusing thing about git becomes simple once you can see which sticky note is where. The trouble is that <strong>there are three separate sets of them</strong>, they drift apart during ordinary work, and only one set is actually yours.</p>
+
+<div class="definition">
+  <div class="label">The three sets of labels</div>
+  <p><strong>Your machine.</strong> <code>main</code>, <code>ch03-submissions</code> — the branches you can move by committing. <code>HEAD</code> marks which one you are standing on.</p>
+  <p><strong>Your memory of GitHub.</strong> <code>origin/main</code>, <code>origin/ch03-submissions</code> — <em>not</em> GitHub's labels. A cached note of where they were the last time you asked. Memories go stale, and nothing tells you when.</p>
+  <p><strong>GitHub.</strong> Its own <code>main</code>, which it moves without consulting you — when you click Merge, for instance.</p>
+</div>
+
+<p>Below, all three are visible at once. Step through and watch what each command actually touches.</p>
+
+<div class="demo" id="gitDemo">
+  <div class="label">The Chapter 3 workflow, step by step</div>
+  <div id="gitCmd" class="stepcmd"></div>
+  <div class="demo-body">
+    <div class="zone">
+      <div class="zt">Your machine</div>
+      <div class="zs">Branches you can move. HEAD is where you are standing.</div>
+      <div class="chain" id="localChain"></div>
+    </div>
+    <div class="zone">
+      <div class="zt">Your memory of GitHub &nbsp;·&nbsp; origin/…</div>
+      <div class="zs">Where GitHub's labels were, last time you asked. Dashed means stale.</div>
+      <div class="chain" id="trackChain"></div>
+    </div>
+    <div class="zone">
+      <div class="zt">GitHub</div>
+      <div class="zs">Its own labels. It moves them without telling you.</div>
+      <div class="chain" id="remoteChain"></div>
+    </div>
+    <div id="gitGap"></div>
+    <div id="gitNote" class="note"></div>
+  </div>
+  <div class="demo-controls stepbar">
+    <button id="gitBack">Back</button>
+    <button id="gitNext">Next</button>
+    <button id="gitReset">Reset</button>
+    <span class="counter" id="gitCount"></span>
+  </div>
+</div>
+
+<h2>What the replay showed</h2>
+
+<p><strong>Committing moves exactly one label.</strong> The branch you are standing on slides forward; every other label stays exactly where it was. That is why <code>main</code> was untouched for the whole of Chapter 3 — you were never standing on it.</p>
+
+<p><strong>Pushing does not move your labels.</strong> It copies commits to GitHub and updates <em>GitHub's</em> label, then refreshes your memory of it. Nothing on your machine changes position.</p>
+
+<p><strong>A pull request moves nothing at all.</strong> It is a request to compare two labels and, eventually, to move one of them. This is why the branch must exist first: with no branch there is no difference, so there is nothing to review, nothing for CI to run against, and nowhere for review comments to attach.</p>
+
+<p><strong>Merging on the website moves GitHub's label and nothing of yours.</strong> This is the moment the three sets diverge, and the one that catches everybody — including you, between Chapters 1 and 2, when <code>ch02-submissions</code> was cut from a stale <code>main</code> and was born missing your own Chapter 1 work.</p>
+
+<p><strong><code>fetch</code> updates your memory. <code>pull</code> updates your memory <em>and</em> your files.</strong> That is the whole difference between them.</p>
+
+<div class="aside">
+  <span class="label">Why <code>git switch main</code> comes first</span>
+  <code>pull</code> updates the branch you are standing on. Standing on <code>ch03-submissions</code> and pulling would drag the merge commit onto that branch instead of onto <code>main</code> — leaving <code>main</code> still stale and your next branch still born wrong. The switch is not politeness; it chooses the target.
+</div>
+
+<h2>The loop, as commands</h2>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>What it moves</th><th>Touches your files?</th></tr></thead>
+<tbody>
+<tr><td><code>git switch main</code></td><td><code>HEAD</code></td><td>yes — swaps the working tree to that branch</td></tr>
+<tr><td><code>git pull</code></td><td><code>origin/main</code> and local <code>main</code></td><td>yes</td></tr>
+<tr><td><code>git fetch</code></td><td><code>origin/main</code> only</td><td><strong>no</strong></td></tr>
+<tr><td><code>git switch -c ch04-submissions</code></td><td>creates a label, moves <code>HEAD</code></td><td>no — nothing is copied</td></tr>
+<tr><td><code>git commit</code></td><td>the branch <code>HEAD</code> is on</td><td>no</td></tr>
+<tr><td><code>git push</code></td><td>GitHub's branch, then <code>origin/…</code></td><td>no</td></tr>
+<tr><td>Merge on GitHub</td><td>GitHub's <code>main</code> only</td><td>no — yours knows nothing yet</td></tr>
+</tbody>
+</table>
+</div>
+
+<nav class="chapter-foot">
+  <a href="git-and-github.html" class="prv"><span class="dir">Previous</span>← Appendix A</a>
+  <a href="../index.html" class="nxt"><span class="dir">Next</span>Contents →</a>
+</nav>
+
+</main>
+
+<script>
+(function () {
+  var C = [
+    ["9d12c9d", "Merge PR #2"],
+    ["624e8db", "ch03: ex1"],
+    ["57969e7", "ch03: ex6"],
+    ["e23e424", "review round 1"],
+    ["2076e53", "review round 2"],
+    ["ca42fa9", "Merge PR #3"]
+  ];
+
+  // known: how many commits that zone has. refs: {name: index}. stale: names drawn dashed.
+  function S(cmd, note, gap, local, track, remote) {
+    return {cmd: cmd, note: note, gap: gap, local: local, track: track, remote: remote};
+  }
+
+  var STEPS = [
+    S("# where Chapter 3 began",
+      "All three sets agree. Chapter 2 has just merged, and every label points at the same commit. This is what the start of a chapter should look like.",
+      "",
+      {known:1, refs:{"main":0}, head:"main"},
+      {known:1, refs:{"origin/main":0}},
+      {known:1, refs:{"main":0}}),
+
+    S("git switch main && git pull",
+      "Nothing moved, because nothing was behind. You run this anyway — it is the only way to find out, and the cost of skipping it is a branch cut from a stale label.",
+      "",
+      {known:1, refs:{"main":0}, head:"main"},
+      {known:1, refs:{"origin/main":0}},
+      {known:1, refs:{"main":0}}),
+
+    S("git switch -c ch03-submissions",
+      "A second sticky note on the same commit, and HEAD moves onto it. No file was copied and no commit was made — this wrote 41 bytes. That is why branching is instant.",
+      "",
+      {known:1, refs:{"main":0,"ch03-submissions":0}, head:"ch03-submissions"},
+      {known:1, refs:{"origin/main":0}},
+      {known:1, refs:{"main":0}}),
+
+    S("git add ex1.py && git commit -m \"ch03: a shipping report with totals\"",
+      "A new commit, and ch03-submissions slides onto it. main stayed exactly where it was — you are not standing on it. GitHub knows nothing about any of this yet.",
+      "",
+      {known:2, refs:{"main":0,"ch03-submissions":1}, head:"ch03-submissions"},
+      {known:1, refs:{"origin/main":0}},
+      {known:1, refs:{"main":0}}),
+
+    S("# …five more commits, one per exercise",
+      "Six commits on the branch. main has not moved once. The gap between the two labels is precisely your Chapter 3 work — which is what a pull request is going to be asked to look at.",
+      "",
+      {known:3, refs:{"main":0,"ch03-submissions":2}, head:"ch03-submissions"},
+      {known:1, refs:{"origin/main":0}},
+      {known:1, refs:{"main":0}}),
+
+    S("git push -u origin ch03-submissions",
+      "The commits are copied to GitHub, GitHub creates its own ch03-submissions label, and your memory of it appears. Note what did NOT happen: no label on your machine moved. Pushing is a copy, not a move.",
+      "",
+      {known:3, refs:{"main":0,"ch03-submissions":2}, head:"ch03-submissions"},
+      {known:3, refs:{"origin/main":0,"origin/ch03-submissions":2}},
+      {known:3, refs:{"main":0,"ch03-submissions":2}}),
+
+    S("gh pr create --base main --head ch03-submissions",
+      "Nothing moved anywhere. A pull request is not a git operation at all — it is GitHub holding a question: what does ch03-submissions have that main does not? With no branch there would be no difference, and so nothing to review.",
+      "",
+      {known:3, refs:{"main":0,"ch03-submissions":2}, head:"ch03-submissions"},
+      {known:3, refs:{"origin/main":0,"origin/ch03-submissions":2}},
+      {known:3, refs:{"main":0,"ch03-submissions":2}}),
+
+    S("git commit -am \"ch03: address review\" && git push   # ×2 rounds",
+      "Review comments arrive, you fix and push. The branch label slides forward twice more and GitHub follows. main still has not moved — it is Wednesday's main, and it is still correct, because nothing has been approved yet.",
+      "",
+      {known:5, refs:{"main":0,"ch03-submissions":4}, head:"ch03-submissions"},
+      {known:5, refs:{"origin/main":0,"origin/ch03-submissions":4}},
+      {known:5, refs:{"main":0,"ch03-submissions":4}}),
+
+    S("# you click Merge on github.com",
+      "Here is the moment everything diverges. GitHub made a merge commit and moved ITS main onto it. Your main did not move. Your memory of GitHub's main did not move either — nothing on your machine was told anything happened.",
+      "GitHub's main is 6 commits ahead of yours. Your machine has no idea.",
+      {known:5, refs:{"main":0,"ch03-submissions":4}, head:"ch03-submissions"},
+      {known:5, refs:{"origin/main":0,"origin/ch03-submissions":4}, stale:["origin/main"]},
+      {known:6, refs:{"main":5,"ch03-submissions":4}}),
+
+    S("git switch main",
+      "HEAD moves onto main — and main is still pointing at last Wednesday's commit. You are now standing on a stale label. Cut a new branch from here and it would be born missing your own Chapter 3 work, which is exactly what happened between Chapters 1 and 2.",
+      "Still stale. Switching does not fetch.",
+      {known:5, refs:{"main":0,"ch03-submissions":4}, head:"main", stale:["main"]},
+      {known:5, refs:{"origin/main":0,"origin/ch03-submissions":4}, stale:["origin/main"]},
+      {known:6, refs:{"main":5,"ch03-submissions":4}}),
+
+    S("git pull",
+      "Two things in one command. Fetch: ask GitHub what it has now, download the missing commits, update origin/main. Merge: move the branch you are standing on to match. Both memory and label are current again — and your files now contain the merged chapter.",
+      "",
+      {known:6, refs:{"main":5,"ch03-submissions":4}, head:"main"},
+      {known:6, refs:{"origin/main":5,"origin/ch03-submissions":4}},
+      {known:6, refs:{"main":5,"ch03-submissions":4}}),
+
+    S("# ready for Chapter 4",
+      "Back in sync, which is where the next chapter starts. The old ch03-submissions label is still lying around on the commit it finished at — harmless, and safe to delete whenever you like.",
+      "",
+      {known:6, refs:{"main":5,"ch03-submissions":4}, head:"main"},
+      {known:6, refs:{"origin/main":5,"origin/ch03-submissions":4}},
+      {known:6, refs:{"main":5,"ch03-submissions":4}})
+  ];
+
+  var step = 0;
+
+  function draw(el, zone, isLocal) {
+    el.innerHTML = "";
+    for (var k = 0; k < zone.known; k++) {
+      if (k > 0) {
+        var arrow = document.createElement("div");
+        arrow.className = "link";
+        arrow.textContent = "→";
+        el.appendChild(arrow);
+      }
+      var node = document.createElement("div");
+      node.className = "node";
+
+      var here = [];
+      for (var name in zone.refs) { if (zone.refs[name] === k) here.push(name); }
+
+      var dot = document.createElement("div");
+      dot.className = "dot" + (here.length ? " tip" : "");
+      dot.textContent = C[k][0];
+      node.appendChild(dot);
+
+      var msg = document.createElement("div");
+      msg.className = "msg";
+      msg.textContent = C[k][1];
+      node.appendChild(msg);
+
+      var refs = document.createElement("div");
+      refs.className = "refs";
+      for (var i = 0; i < here.length; i++) {
+        var chip = document.createElement("div");
+        var isHead = isLocal && here[i] === zone.head;
+        var isStale = (zone.stale || []).indexOf(here[i]) >= 0;
+        chip.className = "ref" + (isHead ? " head" : "") + (isStale ? " stale" : "");
+        chip.textContent = (isHead ? "HEAD → " : "") + here[i];
+        refs.appendChild(chip);
+      }
+      node.appendChild(refs);
+      el.appendChild(node);
+    }
+  }
+
+  function render() {
+    var s = STEPS[step];
+    document.getElementById("gitCmd").textContent = s.cmd;
+    draw(document.getElementById("localChain"), s.local, true);
+    draw(document.getElementById("trackChain"), s.track, false);
+    draw(document.getElementById("remoteChain"), s.remote, false);
+    document.getElementById("gitGap").innerHTML =
+      s.gap ? '<div class="gap">' + s.gap + "</div>" : "";
+    document.getElementById("gitNote").textContent = s.note;
+    document.getElementById("gitCount").textContent =
+      "step " + (step + 1) + " of " + STEPS.length;
+    document.getElementById("gitBack").disabled = (step === 0);
+    document.getElementById("gitNext").disabled = (step === STEPS.length - 1);
+  }
+
+  document.getElementById("gitNext").onclick = function () {
+    if (step < STEPS.length - 1) { step += 1; render(); }
+  };
+  document.getElementById("gitBack").onclick = function () {
+    if (step > 0) { step -= 1; render(); }
+  };
+  document.getElementById("gitReset").onclick = function () { step = 0; render(); };
+  render();
+})();
+</script>
+</body>
+</html>
