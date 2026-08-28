@@ -16,17 +16,17 @@ qty_rejected_count = 0
 accepted_count = 0
 
 for order_id, email, raw_qty, dest in orders:
-    qty =  int(raw_qty)
     if "@" not in email:
         print(f"{order_id}: REJECTED - email address is not valid")
         email_rejected_count += 1
-    elif qty <= 0:
+    elif int(raw_qty) <= 0:
         print(f"{order_id}: REJECTED - quantity must be at least 1")
         qty_rejected_count += 1
     elif dest not in ALLOWED:
         print(f"{order_id}: REJECTED - we do not ship to {dest}")
         dest_rejected_count += 1
     else:
+        qty = int(raw_qty)
         print(f"{order_id}: ACCEPTED - {qty} units to {dest}")
         accepted_count += 1
 
