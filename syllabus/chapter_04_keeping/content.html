@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 4 · Keeping What You Find</title>
+<link rel="stylesheet" href="../../assets/textbook.css">
+</head>
+<body>
+<main class="page">
+
+<header class="chapter-head">
+  <div class="chapter-eyebrow">Chapter Four</div>
+  <h1>Keeping What You Find</h1>
+  <p class="chapter-standfirst">Every program you have written so far could count things without being able to keep them. Chapter 3's duplicate scan found four pairs and could not tell you which four. This chapter is about the sequence that grows — and a returns desk that has no idea how many items it will take back until the day is over.</p>
+</header>
+
+<h2>Why this chapter exists</h2>
+
+<p>Chapter 3 gave you iteration, and with it the ability to do one thing to every item in a batch. But look carefully at what all six exercises had in common: they could <em>count</em>, and they could <em>print</em>, and they could <em>total</em> — and not one of them could <strong>keep</strong> anything.</p>
+
+<p>Exercise 3 is the sharpest case. It scanned a supplier feed and found four duplicate pairs, printing each one as it went. Now ask that program a question it ought to be able to answer: <em>which pairs did you find?</em></p>
+
+<p>It cannot tell you. After the loop, <code>pairs</code> holds the number <code>4</code>, and every position it discovered has been printed to the screen and forgotten. The information existed for one instant inside the loop body and was never stored anywhere, because there was nowhere to store it.</p>
+
+<div class="aside">
+  <span class="label">The exact limitation</span>
+  A tuple is fixed the moment it is created. Its length is decided at birth and can never change. So a tuple cannot be the answer to "collect everything the scan finds", because you do not know how many that is until the scan has finished — and by then it is too late to have made a tuple of the right size.
+</div>
+
+<p>This is not an unusual situation. It is the ordinary one. A returns desk does not know how many items will come back today. A log scan does not know how many errors it will find. A validation pass does not know how many rows will fail. In every case the size of the answer is discovered by doing the work, not known before it starts.</p>
+
+<p>The tool for that is the <strong>list</strong>, and this chapter is about earning it — building the behaviour by hand before reaching for the built-in version, exactly as Chapter 3 built the accumulator before meeting <code>sum</code>.</p>
+
+<p>The running example is a returns desk at a warehouse. Items come back from customers; each is inspected and either goes back into sellable stock or is written off. Nobody knows the split until the day is done.</p>
+
+<h2>1. The list: a sequence that can change</h2>
+
+<p>A list is written with square brackets instead of parentheses:</p><pre><code>restock <span class="o">=</span> [<span class="s">&quot;SKU-101&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-104&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-109&quot;</span>]
+<span class="f">print</span>(restock)
+<span class="f">print</span>(type(restock))
+<span class="f">print</span>(<span class="f">len</span>(restock))
+<span class="f">print</span>(restock[<span class="n">0</span>])
+<span class="f">print</span>(restock[<span class="o">-</span><span class="n">1</span>])</code></pre><div class="out">[&#x27;SKU-101&#x27;, &#x27;SKU-104&#x27;, &#x27;SKU-109&#x27;]
+&lt;class &#x27;list&#x27;&gt;
+3
+SKU-101
+SKU-109</div>
+
+<p>Line by line. <code>["SKU-101", "SKU-104", "SKU-109"]</code> is a <strong>list literal</strong> — square brackets, items separated by commas. <code>print(restock)</code> shows the whole list, and note that Python echoes it back in the same bracket notation, with single quotes around the strings. <code>type(restock)</code> reports <code>&lt;class 'list'&gt;</code>, a different type from <code>tuple</code>. <code>len</code> counts items exactly as it did for tuples and strings. <code>restock[0]</code> indexes from zero, and <code>restock[-1]</code> counts back from the end.</p>
+
+<p>Everything in that list is something you already know how to do, because <strong>a list supports every read operation a tuple supports</strong> — indexing, negative indexing, <code>len</code>, iteration with <code>for</code>, membership with <code>in</code>, and <code>IndexError</code> when you ask for a position that does not exist.</p><pre><code><span class="k">for</span> sku <span class="k">in</span> restock<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f&quot;restocking </span>{sku}<span class="s">&quot;</span>)
+
+<span class="f">print</span>(<span class="s">&quot;SKU-104&quot;</span> <span class="k">in</span> restock)
+<span class="f">print</span>(<span class="s">&quot;SKU-999&quot;</span> <span class="k">in</span> restock)</code></pre><div class="out">restocking SKU-101
+restocking SKU-104
+restocking SKU-109
+True
+False</div>
+
+<p>So if lists can do everything tuples can do, why does the language have both? Because of one difference, and it is the entire point of the chapter.</p>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>A <strong>list</strong> is a sequence of values in order, like a tuple, except that it is <strong>mutable</strong> — its contents and its length can be changed after it has been created. Its type is <code>list</code>, and it is written with square brackets: <code>[1, 2, 3]</code>. The empty list is <code>[]</code>.</p>
+</div>
+
+<p><strong>Mutable</strong> means changeable in place. A tuple is <em>immutable</em>: once made, that is what it is forever. The word is worth learning because it divides Python's types into two camps and explains a great deal of behaviour later on.</p>
+
+<p>One piece of punctuation to notice: the empty list is simply <code>[]</code>, with no comma trick required. Compare that with the one-item tuple <code>("GB",)</code> from Chapter 3, which needed a trailing comma to distinguish it from parentheses used for grouping. Square brackets have no other job, so there is no ambiguity to resolve.</p>
+
+<h2>2. Growing a list: <code>append</code></h2>
+
+<p>Here is the move the whole chapter is built on. Start with an empty list and add to it as you discover things:</p><pre><code>restock <span class="o">=</span> []
+<span class="f">print</span>(restock)
+<span class="f">print</span>(<span class="f">len</span>(restock))
+
+restock.append(<span class="s">&quot;SKU-101&quot;</span>)
+<span class="f">print</span>(restock)
+
+restock.append(<span class="s">&quot;SKU-104&quot;</span>)
+<span class="f">print</span>(restock)
+<span class="f">print</span>(<span class="f">len</span>(restock))</code></pre><div class="out">[]
+0
+[&#x27;SKU-101&#x27;]
+[&#x27;SKU-101&#x27;, &#x27;SKU-104&#x27;]
+2</div>
+
+<p><code>restock.append("SKU-101")</code> deserves a full unpacking, because the syntax is new.</p>
+
+<p>The dot is <strong>attribute access</strong>: it means "the thing named <code>append</code> that belongs to the object <code>restock</code>". <code>append</code> is a <strong>method</strong> — a function that belongs to a particular object and acts on it. You have used functions before (<code>print</code>, <code>len</code>, <code>float</code>) and they stand alone; a method is written after the object it works on, joined by a dot. <code>len(restock)</code> is a function call taking the list as an argument; <code>restock.append(x)</code> is a method call on the list itself.</p>
+
+<p>What <code>append</code> does: it adds one item to the end of the list, increasing its length by one. It does this <strong>in place</strong> — the list named <code>restock</code> is modified. There is no new list.</p>
+
+<div class="aside">
+  <span class="label">The trap that catches everyone once</span>
+  <code>append</code> returns <code>None</code>, not the list. So <code>restock = restock.append("SKU-101")</code> does not grow the list and assign it back — it appends, then replaces your list with <code>None</code>, and everything afterwards fails with <code>AttributeError: 'NoneType' object has no attribute 'append'</code>. Call it as a statement on its own line, never as something to assign. This is true of every method in Python that changes an object in place, and it is deliberate: the language uses the <code>None</code> return to tell you "I mutated the thing you gave me; I did not make you a new one."
+</div>
+
+<p>Now the pattern that matters. Chapter 3 taught the accumulator: initialise before the loop, update inside, use after. <strong>This is the same pattern with a list instead of a number</strong> — and where a numeric accumulator collapses everything into one value, a list accumulator keeps every value.</p><pre><code>returns <span class="o">=</span> (
+    (<span class="s">&quot;SKU-101&quot;</span><span class="o">,</span> <span class="s">&quot;SEALED&quot;</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-102&quot;</span><span class="o">,</span> <span class="s">&quot;DAMAGED&quot;</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-104&quot;</span><span class="o">,</span> <span class="s">&quot;SEALED&quot;</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-107&quot;</span><span class="o">,</span> <span class="s">&quot;DAMAGED&quot;</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-109&quot;</span><span class="o">,</span> <span class="s">&quot;SEALED&quot;</span>)<span class="o">,</span>
+)
+
+restock <span class="o">=</span> []
+writeoff <span class="o">=</span> []
+
+<span class="k">for</span> sku<span class="o">,</span> condition <span class="k">in</span> returns<span class="o">:</span>
+    <span class="k">if</span> condition <span class="o">==</span> <span class="s">&quot;SEALED&quot;</span><span class="o">:</span>
+        restock.append(sku)
+    <span class="k">else</span><span class="o">:</span>
+        writeoff.append(sku)
+
+<span class="f">print</span>(<span class="s">f&quot;restock  </span>{len(restock)}<span class="s">: </span>{restock}<span class="s">&quot;</span>)
+<span class="f">print</span>(<span class="s">f&quot;writeoff </span>{len(writeoff)}<span class="s">: </span>{writeoff}<span class="s">&quot;</span>)</code></pre><div class="out">restock  3: [&#x27;SKU-101&#x27;, &#x27;SKU-104&#x27;, &#x27;SKU-109&#x27;]
+writeoff 2: [&#x27;SKU-102&#x27;, &#x27;SKU-107&#x27;]</div>
+
+<p>Two lists, both empty before the loop, both grown inside it, both used after. Neither length was known in advance — they were discovered by doing the work. That is the thing a tuple could not do.</p>
+
+<p>Notice also that the input <code>returns</code> is still a tuple of tuples, exactly as in Chapter 3. The incoming data has a fixed shape and should not change, so a tuple is right for it. The results are collections that grow, so lists are right for them. Section 4 makes that choice explicit.</p>
+
+<h2>3. Changing an item in place</h2>
+
+<p>The second thing mutability buys you is the ability to replace an item that is already there:</p><pre><code>counts <span class="o">=</span> [<span class="n">0</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">0</span>]
+<span class="f">print</span>(counts)
+
+counts[<span class="n">1</span>] <span class="o">=</span> <span class="n">7</span>
+<span class="f">print</span>(counts)
+
+counts[<span class="n">1</span>] <span class="o">=</span> counts[<span class="n">1</span>] <span class="o">+</span> <span class="n">1</span>
+<span class="f">print</span>(counts)</code></pre><div class="out">[0, 0, 0]
+[0, 7, 0]
+[0, 8, 0]</div>
+
+<p><code>counts[1] = 7</code> reads left-to-right as "the item at position 1 of <code>counts</code> becomes 7". You have seen <code>counts[1]</code> before, on the right-hand side, as a way of <em>reading</em> a position. On the left-hand side of <code>=</code> it <em>writes</em> that position instead. The list keeps its length; one slot now holds something different.</p>
+
+<p><code>counts[1] = counts[1] + 1</code> does both in one line: read position 1, add one, write the result back to position 1. This is the accumulator pattern again, except the running total lives in a slot of a list rather than in a name of its own — which means you can keep several running totals at once without inventing several names.</p>
+
+<p>Try the same thing on a tuple and Python refuses outright:</p><pre><code>sizes <span class="o">=</span> (<span class="n">10</span><span class="o">,</span> <span class="n">20</span><span class="o">,</span> <span class="n">30</span>)
+sizes[<span class="n">1</span>] <span class="o">=</span> <span class="n">99</span></code></pre><div class="out">Traceback (most recent call last):
+  File &quot;example.py&quot;, line 2, in &lt;module&gt;
+    sizes[1] = 99
+    ~~~~~~~~^^^^^
+TypeError: &#x27;tuple&#x27; object does not support item assignment</div>
+
+<p>Read the error precisely: <em>does not support item assignment</em>. It is not that the value 99 is wrong, or that position 1 does not exist. The operation itself is unavailable on this type. That is immutability enforced by the language rather than by convention.</p>
+
+<div class="aside">
+  <span class="label">A model for the difference</span>
+  Picture a tuple as a row printed on paper — you can read any part of it, and to change anything you must print a new row. A list is a row of pigeonholes: the shelf stays put, and you can swap what is in any hole, or bolt another hole onto the end. Both let you read slot 3. Only one lets you change what is in it.
+</div>
+
+<h2>4. Which to reach for: list or tuple</h2>
+
+<p>Both hold several values in order. Both index from zero. Both work with <code>for</code>, <code>len</code> and <code>in</code>. So the choice is not about capability, and reaching for a list every time "because it can do more" is the wrong instinct.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>tuple</th><th>list</th></tr></thead>
+<tbody>
+<tr><td>Written</td><td><code>(a, b, c)</code></td><td><code>[a, b, c]</code></td></tr>
+<tr><td>Empty</td><td><code>()</code></td><td><code>[]</code></td></tr>
+<tr><td>One item</td><td><code>(a,)</code> — comma required</td><td><code>[a]</code></td></tr>
+<tr><td>Can grow or shrink</td><td>no</td><td>yes</td></tr>
+<tr><td>Can replace an item</td><td>no</td><td>yes</td></tr>
+<tr><td>Natural meaning</td><td>one <strong>record</strong>: fields of different kinds, in a fixed order</td><td>one <strong>collection</strong>: many things of the same kind, however many there turn out to be</td></tr>
+<tr><td>Typical use</td><td>a row: <code>("SKU-101", 12, True)</code></td><td>the results you gather: <code>["SKU-101", "SKU-104"]</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The distinction worth internalising is <strong>record versus collection</strong>, and it is about meaning rather than mechanics.</p>
+
+<p>A tuple usually holds a fixed number of fields that mean different things — <code>(sku, quantity, active)</code> is a product line, and position 0 is always the code while position 2 is always the flag. Its length is part of its shape, which is why unpacking with <code>for sku, quantity, active in rows:</code> works and reads well.</p>
+
+<p>A list usually holds any number of things that all mean the same thing — every SKU to restock, every order that failed validation. Its length is data, not shape. It would be meaningless to unpack it into named variables, because you do not know how many there are.</p>
+
+<p>This is exactly the arrangement in the returns example: the incoming data is a tuple of tuples, because each row is a record and the batch is fixed once it arrives. The outputs are lists, because they are collections whose sizes are discovered.</p>
+
+<p>There is a second, quieter reason to prefer a tuple where one fits: <strong>a value that cannot change cannot be changed by accident.</strong> If a piece of data is not supposed to be modified, a tuple makes modifying it an error rather than a bug. That protection is free, and it is why <code>ALLOWED = ("GB", "IE", "FR")</code> in the previous chapters was correctly a tuple and not a list.</p>
+
+<h2>5. Removing and inserting, and what each costs</h2>
+
+<p>Three more methods complete the everyday set. Each changes the list in place.</p><pre><code>queue <span class="o">=</span> [<span class="s">&quot;ORD-1&quot;</span><span class="o">,</span> <span class="s">&quot;ORD-2&quot;</span><span class="o">,</span> <span class="s">&quot;ORD-3&quot;</span><span class="o">,</span> <span class="s">&quot;ORD-4&quot;</span>]
+
+last <span class="o">=</span> queue.pop()
+<span class="f">print</span>(last<span class="o">,</span> queue)
+
+first <span class="o">=</span> queue.pop(<span class="n">0</span>)
+<span class="f">print</span>(first<span class="o">,</span> queue)
+
+queue.insert(<span class="n">0</span><span class="o">,</span> <span class="s">&quot;ORD-URGENT&quot;</span>)
+<span class="f">print</span>(queue)
+
+queue.remove(<span class="s">&quot;ORD-3&quot;</span>)
+<span class="f">print</span>(queue)</code></pre><div class="out">ORD-4 [&#x27;ORD-1&#x27;, &#x27;ORD-2&#x27;, &#x27;ORD-3&#x27;]
+ORD-1 [&#x27;ORD-2&#x27;, &#x27;ORD-3&#x27;]
+[&#x27;ORD-URGENT&#x27;, &#x27;ORD-2&#x27;, &#x27;ORD-3&#x27;]
+[&#x27;ORD-URGENT&#x27;, &#x27;ORD-2&#x27;]</div>
+
+<p><code>pop()</code> with no argument removes the <strong>last</strong> item and — unlike <code>append</code> — <em>returns</em> it, which is why <code>last = queue.pop()</code> is correct and useful. <code>pop(0)</code> removes the item at a given position instead, again returning it. <code>insert(0, x)</code> puts <code>x</code> at position 0 and shifts everything after it one place right. <code>remove(x)</code> deletes the <strong>first</strong> item equal to <code>x</code>, searching by value rather than by position.</p>
+
+<p>Two failure modes to know before you meet them at speed:</p><pre><code>empty <span class="o">=</span> []
+empty.pop()</code></pre><div class="out">IndexError: pop from empty list</div><pre><code>letters <span class="o">=</span> [<span class="s">&quot;a&quot;</span><span class="o">,</span> <span class="s">&quot;b&quot;</span>]
+letters.remove(<span class="s">&quot;z&quot;</span>)</code></pre><div class="out">ValueError: list.remove(x): x not in list</div>
+
+<p><code>pop</code> on an empty list raises <code>IndexError</code>; <code>remove</code> for a value that is not present raises <code>ValueError</code>. Both are the "the loop found nothing" case wearing a different hat — the same class of problem as a summary line that assumes it has something to summarise. Guard with <code>if lst:</code> or <code>if x in lst:</code> before calling either.</p>
+
+<div class="aside">
+  <span class="label">A note on cost, which will matter later</span>
+  These operations are not equally cheap. <code>append()</code> and <code>pop()</code> at the end are effectively instant regardless of how long the list is. <code>insert(0, x)</code>, <code>pop(0)</code> and <code>remove(x)</code> are not: every item after the affected position has to shift along by one, so the work grows with the length of the list. On ten items nobody notices. On a hundred thousand, a loop that repeatedly does <code>pop(0)</code> is quietly doing billions of moves. There is a structure built for cheap removal from the front — <code>collections.deque</code> — and it arrives in the queues chapter, where the problem that needs it does.
+</div>
+
+<p>An empty list is <strong>falsy</strong>, exactly as an empty tuple and an empty string are, which makes the guard read naturally:</p><pre><code>found <span class="o">=</span> []
+
+<span class="k">if</span> found<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f&quot;</span>{len(found)}<span class="s"> matches&quot;</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">&quot;no matches&quot;</span>)</code></pre><div class="out">no matches</div>
+
+<p><code>if found:</code> is idiomatic Python for "if this list has anything in it". Writing <code>if len(found) &gt; 0:</code> is not wrong, and it is clearer to a beginner, but the shorter form is what you will read in real code and it says the same thing.</p>
+
+<h2>6. Build before you borrow: the accumulators you have already written</h2>
+
+<p>Across Chapters 1 to 3 you wrote running totals, running counts and running maxima by hand, six exercises' worth. That was deliberate. Now that the pattern is in your fingers, here is what it looks like over a list — and then the built-in that replaces it.</p>
+
+<p>The hand-written versions, using nothing this syllabus has not taught:</p><pre><code>values <span class="o">=</span> [<span class="n">45</span><span class="o">,</span> <span class="n">12</span><span class="o">,</span> <span class="n">88</span><span class="o">,</span> <span class="n">3</span><span class="o">,</span> <span class="n">27</span>]
+
+total <span class="o">=</span> <span class="n">0</span>
+<span class="k">for</span> v <span class="k">in</span> values<span class="o">:</span>
+    total <span class="o">=</span> total <span class="o">+</span> v
+
+biggest <span class="o">=</span> <span class="k">None</span>
+<span class="k">for</span> v <span class="k">in</span> values<span class="o">:</span>
+    <span class="k">if</span> biggest <span class="k">is</span> <span class="k">None</span> <span class="k">or</span> v <span class="o">&gt;</span> biggest<span class="o">:</span>
+        biggest <span class="o">=</span> v
+
+<span class="f">print</span>(total<span class="o">,</span> biggest)</code></pre><div class="out">175 88</div>
+
+<p>The <code>biggest</code> loop is worth re-reading. It starts at <code>None</code> rather than at zero, because zero would be wrong the moment every value is negative — <code>0</code> is not a member of the data and has no business winning. <code>None</code> means "nothing seen yet", and <code>biggest is None or v &gt; biggest</code> reads as "take this value if we have nothing, or if it beats what we have". Python evaluates <code>or</code> left to right and stops as soon as one side is true, so when <code>biggest</code> is <code>None</code> the comparison <code>v &gt; biggest</code> is never attempted — which matters, because comparing a number with <code>None</code> raises <code>TypeError</code>.</p>
+
+<p>Now the borrowed versions:</p><pre><code>values <span class="o">=</span> [<span class="n">45</span><span class="o">,</span> <span class="n">12</span><span class="o">,</span> <span class="n">88</span><span class="o">,</span> <span class="n">3</span><span class="o">,</span> <span class="n">27</span>]
+
+<span class="f">print</span>(<span class="f">sum</span>(values))
+<span class="f">print</span>(<span class="f">max</span>(values))
+<span class="f">print</span>(<span class="f">min</span>(values))
+<span class="f">print</span>(<span class="f">len</span>(values))</code></pre><div class="out">175
+88
+3
+5</div>
+
+<p><code>sum</code>, <code>max</code> and <code>min</code> are <strong>built-in functions</strong> — always available, no import needed. Each takes a sequence and returns a single value. They work on lists, tuples and anything else you can loop over. <code>sum</code> requires numbers; <code>max</code> and <code>min</code> work on anything Python can compare, including strings, where they give alphabetical order.</p>
+
+<p>These are not magic and they are not faster because they are clever — they are the loop you just wrote, implemented once in C inside the interpreter. The reason to prefer them is that <code>sum(values)</code> states the intent in one glance, and a four-line loop makes a reader check whether you got it right.</p>
+
+<div class="aside">
+  <span class="label">The empty case, which the review has caught you on three times</span>
+  <code>sum([])</code> is <code>0</code>, which is sensible. But <code>max([])</code> and <code>min([])</code> raise <code>ValueError: max() arg is an empty sequence</code> — because there is no honest answer, and inventing one would be worse than refusing. This is the "what if the loop found nothing" question in built-in form. Any time you call <code>max</code> on something you collected rather than something you were given, ask whether it can be empty, and guard with <code>if values:</code> if it can.
+</div>
+
+<h2>7. Sorting: build it, then borrow it</h2>
+
+<p>Ordering a list is the first thing you will want after collecting one — the ten slowest queries, the biggest refunds, the alphabetical picking route. Before meeting the built-in, write one, because a sort you have written is a sort you can reason about.</p>
+
+<p>The algorithm is <strong>selection sort</strong>, and it is exactly the shape §9 of Chapter 3 taught: an outer loop over every position, an inner loop over every position after it.</p><pre><code>values <span class="o">=</span> [<span class="n">45</span><span class="o">,</span> <span class="n">12</span><span class="o">,</span> <span class="n">88</span><span class="o">,</span> <span class="n">3</span><span class="o">,</span> <span class="n">27</span>]
+
+<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(values))<span class="o">:</span>
+    smallest <span class="o">=</span> i
+    <span class="k">for</span> j <span class="k">in</span> <span class="f">range</span>(i <span class="o">+</span> <span class="n">1</span><span class="o">,</span> <span class="f">len</span>(values))<span class="o">:</span>
+        <span class="k">if</span> values[j] <span class="o">&lt;</span> values[smallest]<span class="o">:</span>
+            smallest <span class="o">=</span> j
+    values[i]<span class="o">,</span> values[smallest] <span class="o">=</span> values[smallest]<span class="o">,</span> values[i]
+
+<span class="f">print</span>(values)</code></pre><div class="out">[3, 12, 27, 45, 88]</div>
+
+<p>Walk it. The outer loop stands on position <code>i</code> and its job is to put the correct value there, permanently. <code>smallest = i</code> assumes for now that the value already at <code>i</code> is the smallest of everything remaining — a starting guess, holding a <em>position</em> rather than a value, which is what makes the swap possible later. The inner loop then checks every position after <code>i</code>; whenever it finds something smaller than the current champion, it updates <code>smallest</code> to that position. When the inner loop ends, <code>smallest</code> is the position of the smallest remaining value.</p>
+
+<p>Then the swap: <code>values[i], values[smallest] = values[smallest], values[i]</code>. This is the multiple assignment from Chapter 3, and it works because Python evaluates the entire right-hand side first, building the pair of old values, and only then assigns them to the left. Without that, the first assignment would overwrite a value you still needed. Note that this line requires item assignment — <strong>it is impossible on a tuple</strong>, which is why sorting belongs in the lists chapter.</p>
+
+<p>After the outer loop's first pass, position 0 holds the smallest value in the list and never changes again. After the second, position 1 is settled. The sorted region grows from the left until nothing is left to place.</p>
+
+<p>The cost is the triangular scan from §9: roughly <code>n × (n − 1) ÷ 2</code> comparisons. For five values that is ten. For ten thousand it is fifty million, which is why nobody uses selection sort in production — but you now know what a sort <em>is</em>, which is the point.</p>
+
+
+<div class="demo" id="sortDemo">
+  <div class="label">Step through selection sort</div>
+  <p>The algorithm from §7, one comparison at a time. <strong>i</strong> is the position being filled, <strong>j</strong> is the position being examined, and <strong>smallest</strong> is the best candidate found so far. Everything left of <strong>i</strong> is finished and never moves again.</p>
+  <div class="demo-body">
+    <div id="sortBoxes" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px 0"></div>
+    <div id="sortState" style="font-family:ui-monospace,monospace;font-size:.9em;line-height:1.7"></div>
+  </div>
+  <div class="demo-controls">
+    <button id="sortStep">Step</button>
+    <button id="sortRun">Run to end</button>
+    <button id="sortReset">Reset</button>
+  </div>
+</div>
+
+<h3>The borrowed version</h3><pre><code>values <span class="o">=</span> [<span class="n">45</span><span class="o">,</span> <span class="n">12</span><span class="o">,</span> <span class="n">88</span><span class="o">,</span> <span class="n">3</span><span class="o">,</span> <span class="n">27</span>]
+
+ordered <span class="o">=</span> <span class="f">sorted</span>(values)
+<span class="f">print</span>(ordered)
+<span class="f">print</span>(values)
+
+values.sort()
+<span class="f">print</span>(values)
+
+<span class="f">print</span>(<span class="f">sorted</span>(values<span class="o">,</span> reverse<span class="o">=</span><span class="k">True</span>))</code></pre><div class="out">[3, 12, 27, 45, 88]
+[45, 12, 88, 3, 27]
+[3, 12, 27, 45, 88]
+[88, 45, 27, 12, 3]</div>
+
+<p>Two different tools, and the difference matters. <code>sorted(values)</code> is a built-in function that <strong>returns a new sorted list and leaves the original untouched</strong> — look at the second <code>print</code>, which shows <code>values</code> still in its original order. <code>values.sort()</code> is a list <em>method</em> that <strong>sorts in place and returns <code>None</code></strong>, exactly like <code>append</code>. Writing <code>ordered = values.sort()</code> is the same trap in a new costume: it sorts the list and hands you <code>None</code>.</p>
+
+<p><code>reverse=True</code> is a <strong>keyword argument</strong> — an argument passed by name rather than by position. You will meet these properly in the functions chapter; for now, read it as an option, and note that it works on both <code>sorted</code> and <code>.sort()</code>.</p>
+
+<p>Sorting a list of tuples is worth seeing now, because it will do most of the work in this chapter's exercises:</p><pre><code>lines <span class="o">=</span> [
+    (<span class="s">&quot;SKU-104&quot;</span><span class="o">,</span> <span class="n">3</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-101&quot;</span><span class="o">,</span> <span class="n">12</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-109&quot;</span><span class="o">,</span> <span class="n">7</span>)<span class="o">,</span>
+]
+
+<span class="f">print</span>(<span class="f">sorted</span>(lines))</code></pre><div class="out">[(&#x27;SKU-101&#x27;, 12), (&#x27;SKU-104&#x27;, 3), (&#x27;SKU-109&#x27;, 7)]</div>
+
+<p>Tuples are compared field by field: first elements first, and only if those tie does Python look at the second. So sorting a list of <code>(sku, quantity)</code> rows orders them by SKU. To order by quantity instead, build the tuples the other way round — <code>(quantity, sku)</code> — sort, and read the fields back off. That is a real technique, not a workaround, and it is how you sort by any field using only what you now know.</p>
+
+<h2>8. <code>enumerate</code>: index and item together</h2>
+
+<p>Chapter 3 gave you two ways to loop, and made you feel the gap between them. <code>for sku in feed:</code> gives you the value but not where it sits. <code>for i in range(len(feed)):</code> gives you the position but then makes you write <code>feed[i]</code> every time you want the value.</p>
+
+<p>Often you want both:</p><pre><code>picks <span class="o">=</span> [<span class="s">&quot;SKU-101&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-104&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-109&quot;</span>]
+
+<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(picks))<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f&quot;</span>{i + 1}<span class="s">. </span>{picks[i]}<span class="s">&quot;</span>)</code></pre><div class="out">1. SKU-101
+2. SKU-104
+3. SKU-109</div>
+
+<p>That works, and until now it was the only way. But <code>picks[i]</code> is a lookup you are doing by hand on every iteration, and <code>range(len(picks))</code> is three function calls to say "every position". The built-in that says it directly:</p><pre><code><span class="k">for</span> i<span class="o">,</span> sku <span class="k">in</span> <span class="f">enumerate</span>(picks)<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f&quot;</span>{i + 1}<span class="s">. </span>{sku}<span class="s">&quot;</span>)</code></pre><div class="out">1. SKU-101
+2. SKU-104
+3. SKU-109</div>
+
+<p><code>enumerate(picks)</code> hands back a position and an item on every iteration, as a pair — which is why the loop header unpacks two names, exactly as <code>for sku, condition in returns:</code> did with a tuple of tuples. The indexing disappears, and the loop now says what it means.</p>
+
+<p>If your numbering starts at one, say so rather than adding one everywhere:</p><pre><code><span class="k">for</span> n<span class="o">,</span> sku <span class="k">in</span> <span class="f">enumerate</span>(picks<span class="o">,</span> start<span class="o">=</span><span class="n">1</span>)<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f&quot;</span>{n}<span class="s">. </span>{sku}<span class="s">&quot;</span>)</code></pre><div class="out">1. SKU-101
+2. SKU-104
+3. SKU-109</div>
+
+<p><code>start=1</code> is another keyword argument. The default is <code>0</code>, which is what you want when the number is a genuine index into the list; <code>start=1</code> is what you want when it is a line number for a human to read.</p>
+
+<div class="aside">
+  <span class="label">When <code>range(len(...))</code> is still correct</span>
+  <code>enumerate</code> replaces <code>range(len(...))</code> when you want each item once, in order. It does <strong>not</strong> replace it when the positions themselves are the subject — the pairwise scan from §9, <code>for j in range(i + 1, len(feed))</code>, cannot be written with <code>enumerate</code>, because the inner loop's bounds depend on the outer position. Both tools stay.
+</div>
+
+<h2>9. <code>zip</code>: two sequences in step</h2>
+
+<p>Sometimes related data arrives in two separate sequences that line up by position:</p><pre><code>skus <span class="o">=</span> [<span class="s">&quot;SKU-101&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-104&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-109&quot;</span>]
+counts <span class="o">=</span> [<span class="n">12</span><span class="o">,</span> <span class="n">3</span><span class="o">,</span> <span class="n">7</span>]
+
+<span class="k">for</span> sku<span class="o">,</span> count <span class="k">in</span> <span class="f">zip</span>(skus<span class="o">,</span> counts)<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f&quot;</span>{sku:&lt;10}{count:&gt;4}<span class="s">&quot;</span>)</code></pre><div class="out">SKU-101     12
+SKU-104      3
+SKU-109      7</div>
+
+<p><code>zip</code> walks both sequences at once, handing back one item from each on every iteration, paired. Without it you would loop over positions and index into both lists by hand, which works and is noisier.</p>
+
+<p>The trap, and it is a quiet one:</p><pre><code>skus <span class="o">=</span> [<span class="s">&quot;SKU-101&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-104&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-109&quot;</span>]
+counts <span class="o">=</span> [<span class="n">12</span><span class="o">,</span> <span class="n">3</span>]
+
+<span class="k">for</span> sku<span class="o">,</span> count <span class="k">in</span> <span class="f">zip</span>(skus<span class="o">,</span> counts)<span class="o">:</span>
+    <span class="f">print</span>(sku<span class="o">,</span> count)</code></pre><div class="out">SKU-101 12
+SKU-104 3</div>
+
+<p><strong><code>zip</code> stops at the shorter sequence and says nothing.</strong> <code>SKU-109</code> was silently dropped. No error, no warning, no clue in the output that anything is missing — you would have to already know there were three SKUs to notice that two came out.</p>
+
+<p>This is the single most dangerous thing in this chapter, because it is data loss that looks like success. If two sequences are supposed to be the same length, check it — <code>if len(skus) != len(counts):</code> — rather than trusting that they are.</p>
+
+<h2>10. What this makes possible, and what is still coming</h2>
+
+<p>You can now collect results whose size you do not know in advance, change them after the fact, and put them in order. Combined with the previous three chapters, that is enough to write the shape of most small data-processing programs: read a batch, validate it, route it, gather what matters, order it, report it.</p>
+
+<p>Deliberately deferred, so you know they exist and roughly when they arrive:</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tool</th><th>What it adds</th><th>Where it lands</th></tr></thead>
+<tbody>
+<tr><td><code>dict</code></td><td>lookup by key instead of by position — the right answer to "count how many of each"</td><td>Dictionaries chapter, next</td></tr>
+<tr><td><code>set</code></td><td>membership and de-duplication without scanning</td><td>With dictionaries</td></tr>
+<tr><td>comprehensions</td><td><code>[x for x in items if ...]</code> — a loop as a single expression</td><td>After dictionaries</td></tr>
+<tr><td><code>key=</code> on <code>sorted</code></td><td>sorting by a chosen field without rebuilding tuples</td><td>Functions chapter, once <code>def</code> exists</td></tr>
+<tr><td>slicing <code>lst[1:3]</code></td><td>taking a section of a sequence</td><td>Strings chapter</td></tr>
+<tr><td><code>collections.deque</code></td><td>cheap removal from the front</td><td>Queues chapter</td></tr>
+<tr><td><code>.sort(key=...)</code>, <code>heapq</code></td><td>ordering by rule, and keeping only the top N cheaply</td><td>Sorting and algorithms</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>One in that table is worth flagging now: <strong>counting how many times each value appears is not a list problem</strong>, and if an exercise seems to want it, you are being asked to do it the long way on purpose. The right tool is a dictionary and it is the next chapter.</p>
+
+<h2>Worked examples</h2>
+
+<h3>Example 1 — The returns desk at close of day</h3>
+
+<p>Six items came back. Sealed goods return to sellable stock; damaged goods are written off and their value lost. Produce the two lists and total what the damage cost.</p>
+
+<p>The reasoning before the code. Two outputs are needed and neither size is known in advance, so both are lists built by appending. The restock list only needs the SKU, because nothing else about it matters downstream. The write-off list needs the SKU <em>and</em> the value, because the total has to be computed from it — so each entry is a <strong>tuple appended into a list</strong>: a record inside a collection, which is the arrangement §4 described.</p><pre><code>returns <span class="o">=</span> (
+    (<span class="s">&quot;SKU-101&quot;</span><span class="o">,</span> <span class="s">&quot;SEALED&quot;</span><span class="o">,</span>  <span class="n">24.99</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-102&quot;</span><span class="o">,</span> <span class="s">&quot;DAMAGED&quot;</span><span class="o">,</span> <span class="n">15.50</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-104&quot;</span><span class="o">,</span> <span class="s">&quot;SEALED&quot;</span><span class="o">,</span>  <span class="n">99.00</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-107&quot;</span><span class="o">,</span> <span class="s">&quot;DAMAGED&quot;</span><span class="o">,</span>  <span class="n">8.75</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-109&quot;</span><span class="o">,</span> <span class="s">&quot;SEALED&quot;</span><span class="o">,</span>  <span class="n">24.99</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-112&quot;</span><span class="o">,</span> <span class="s">&quot;DAMAGED&quot;</span><span class="o">,</span> <span class="n">45.00</span>)<span class="o">,</span>
+)
+
+restock <span class="o">=</span> []
+writeoff <span class="o">=</span> []
+
+<span class="k">for</span> sku<span class="o">,</span> condition<span class="o">,</span> value <span class="k">in</span> returns<span class="o">:</span>
+    <span class="k">if</span> condition <span class="o">==</span> <span class="s">&quot;SEALED&quot;</span><span class="o">:</span>
+        restock.append(sku)
+    <span class="k">else</span><span class="o">:</span>
+        writeoff.append((sku<span class="o">,</span> value))
+
+<span class="f">print</span>(<span class="s">f&quot;RESTOCK (</span>{len(restock)}<span class="s">)&quot;</span>)
+<span class="k">for</span> sku <span class="k">in</span> <span class="f">sorted</span>(restock)<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f&quot;  </span>{sku}<span class="s">&quot;</span>)
+
+<span class="f">print</span>(<span class="s">f&quot;WRITE-OFF (</span>{len(writeoff)}<span class="s">)&quot;</span>)
+lost <span class="o">=</span> <span class="n">0.0</span>
+<span class="k">for</span> sku<span class="o">,</span> value <span class="k">in</span> writeoff<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f&quot;  </span>{sku:&lt;10}{value:&gt;7.2f}<span class="s">&quot;</span>)
+    lost <span class="o">=</span> lost <span class="o">+</span> value
+
+<span class="f">print</span>(<span class="s">&quot;-&quot;</span> <span class="o">*</span> <span class="n">24</span>)
+<span class="k">if</span> writeoff<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f&quot;lost </span>{lost:,.2f}<span class="s"> across </span>{len(writeoff)}<span class="s"> items&quot;</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">&quot;nothing written off&quot;</span>)</code></pre><div class="out">RESTOCK (3)
+  SKU-101
+  SKU-104
+  SKU-109
+WRITE-OFF (3)
+  SKU-102     15.50
+  SKU-107      8.75
+  SKU-112     45.00
+------------------------
+lost 69.25 across 3 items</div>
+
+<p><code>writeoff.append((sku, value))</code> has two sets of parentheses and both are doing work: the outer pair is the method call, the inner pair builds the tuple. Drop the inner pair and Python reads it as <code>append</code> being given two arguments and refuses, because <code>append</code> adds exactly one item.</p>
+
+<p><code>for sku, value in writeoff:</code> then unpacks each record on the way back out, exactly as you unpacked rows of a tuple-of-tuples in Chapter 3. The list is a collection of records; looping over it hands you one record at a time.</p>
+
+<p>Finally, <code>if writeoff:</code> guards the summary. On this data it is never false — and that is precisely why it is there. A day where nothing is damaged is a perfectly ordinary day, and <code>lost 0.00 across 0 items</code> is a worse thing to print than a sentence that says so.</p>
+
+<h3>Example 2 — The three largest write-offs</h3>
+
+<p>Now order the damage. The obstacle: <code>sorted</code> compares tuples field by field starting at the front, so sorting <code>(sku, value)</code> records gives alphabetical order by SKU — not what is wanted.</p>
+
+<p>The technique is to <strong>build new tuples with the field you want to sort by in front</strong>, sort those, and read the fields back off afterwards.</p><pre><code>writeoff <span class="o">=</span> [
+    (<span class="s">&quot;SKU-102&quot;</span><span class="o">,</span> <span class="n">15.50</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-107&quot;</span><span class="o">,</span>  <span class="n">8.75</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-112&quot;</span><span class="o">,</span> <span class="n">45.00</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-118&quot;</span><span class="o">,</span> <span class="n">30.00</span>)<span class="o">,</span>
+    (<span class="s">&quot;SKU-120&quot;</span><span class="o">,</span>  <span class="n">2.99</span>)<span class="o">,</span>
+]
+
+by_value <span class="o">=</span> []
+<span class="k">for</span> sku<span class="o">,</span> value <span class="k">in</span> writeoff<span class="o">:</span>
+    by_value.append((value<span class="o">,</span> sku))
+
+by_value.sort(reverse<span class="o">=</span><span class="k">True</span>)
+
+<span class="f">print</span>(<span class="s">&quot;TOP 3 WRITE-OFFS&quot;</span>)
+<span class="k">for</span> n<span class="o">,</span> pair <span class="k">in</span> <span class="f">enumerate</span>(by_value<span class="o">,</span> start<span class="o">=</span><span class="n">1</span>)<span class="o">:</span>
+    <span class="k">if</span> n <span class="o">&gt;</span> <span class="n">3</span><span class="o">:</span>
+        <span class="k">break</span>
+    value<span class="o">,</span> sku <span class="o">=</span> pair
+    <span class="f">print</span>(<span class="s">f&quot;</span>{n}<span class="s">. </span>{sku:&lt;10}{value:&gt;7.2f}<span class="s">&quot;</span>)</code></pre><div class="out">TOP 3 WRITE-OFFS
+1. SKU-112     45.00
+2. SKU-118     30.00
+3. SKU-102     15.50</div>
+
+<p><code>by_value</code> holds <code>(value, sku)</code> — the same information, reordered so that value is compared first. <code>by_value.sort(reverse=True)</code> sorts in place, largest first. Because <code>.sort()</code> mutates and returns <code>None</code>, it is called as a statement on its own line; assigning its result would throw the list away.</p>
+
+<p><code>enumerate(by_value, start=1)</code> supplies the ranking numbers, and <code>if n &gt; 3: break</code> stops after three. The <code>break</code> is doing real work here — it leaves the loop entirely — which is the test §8 of Chapter 3 gives for whether a flow keyword belongs. Note also that this prints three rows only because there <em>are</em> at least three; with two write-offs it prints two and no error, because the loop simply runs out.</p>
+
+<h3>Example 3 — The pipeline, with the results kept</h3>
+
+<p>This one integrates everything: Chapter 2's validation and risk scoring, Chapter 3's guard clauses and accumulators, and this chapter's lists. Five orders in; each is rejected, flagged for review, or shipped. The difference from every previous version is that the outcomes are <em>kept</em> and can be reported in whatever order suits the reader, rather than printed as they fly past.</p><pre><code>ALLOWED <span class="o">=</span> (<span class="s">&quot;GB&quot;</span><span class="o">,</span> <span class="s">&quot;IE&quot;</span><span class="o">,</span> <span class="s">&quot;FR&quot;</span>)
+
+orders <span class="o">=</span> (
+    (<span class="s">&quot;ORD-7101&quot;</span><span class="o">,</span> <span class="s">&quot;a@shop.co&quot;</span><span class="o">,</span> <span class="s">&quot;GB&quot;</span><span class="o">,</span> <span class="s">&quot;1240.00&quot;</span><span class="o">,</span>   <span class="n">3</span><span class="o">,</span> <span class="k">None</span>)<span class="o">,</span>
+    (<span class="s">&quot;ORD-7102&quot;</span><span class="o">,</span> <span class="s">&quot;bad.email&quot;</span><span class="o">,</span> <span class="s">&quot;GB&quot;</span><span class="o">,</span>  <span class="s">&quot;200.00&quot;</span><span class="o">,</span> <span class="n">400</span><span class="o">,</span> <span class="s">&quot;07700900123&quot;</span>)<span class="o">,</span>
+    (<span class="s">&quot;ORD-7103&quot;</span><span class="o">,</span> <span class="s">&quot;c@shop.co&quot;</span><span class="o">,</span> <span class="s">&quot;IE&quot;</span><span class="o">,</span>  <span class="s">&quot;640.00&quot;</span><span class="o">,</span>  <span class="n">90</span><span class="o">,</span> <span class="s">&quot;07700900555&quot;</span>)<span class="o">,</span>
+    (<span class="s">&quot;ORD-7104&quot;</span><span class="o">,</span> <span class="s">&quot;d@shop.co&quot;</span><span class="o">,</span> <span class="s">&quot;DE&quot;</span><span class="o">,</span>   <span class="s">&quot;80.00&quot;</span><span class="o">,</span>  <span class="n">12</span><span class="o">,</span> <span class="k">None</span>)<span class="o">,</span>
+    (<span class="s">&quot;ORD-7105&quot;</span><span class="o">,</span> <span class="s">&quot;e@shop.co&quot;</span><span class="o">,</span> <span class="s">&quot;FR&quot;</span><span class="o">,</span>  <span class="s">&quot;300.00&quot;</span><span class="o">,</span>  <span class="n">90</span><span class="o">,</span> <span class="k">None</span>)<span class="o">,</span>
+)
+
+rejected <span class="o">=</span> []
+flagged <span class="o">=</span> []
+shipped <span class="o">=</span> []
+
+<span class="k">for</span> order_id<span class="o">,</span> email<span class="o">,</span> dest<span class="o">,</span> raw_value<span class="o">,</span> age<span class="o">,</span> phone <span class="k">in</span> orders<span class="o">:</span>
+    <span class="k">if</span> <span class="s">&quot;@&quot;</span> <span class="k">not</span> <span class="k">in</span> email<span class="o">:</span>
+        rejected.append((order_id<span class="o">,</span> <span class="s">&quot;bad email&quot;</span>))
+        <span class="k">continue</span>
+    <span class="k">if</span> dest <span class="k">not</span> <span class="k">in</span> ALLOWED<span class="o">:</span>
+        rejected.append((order_id<span class="o">,</span> <span class="s">f&quot;no shipping to </span>{dest}<span class="s">&quot;</span>))
+        <span class="k">continue</span>
+
+    value <span class="o">=</span> <span class="f">float</span>(raw_value)
+    risk <span class="o">=</span> <span class="n">0</span>
+    <span class="k">if</span> age <span class="o">&lt;</span> <span class="n">7</span><span class="o">:</span>
+        risk <span class="o">=</span> risk <span class="o">+</span> <span class="n">30</span>
+    <span class="k">if</span> value <span class="o">&gt;</span> <span class="n">1000</span><span class="o">:</span>
+        risk <span class="o">=</span> risk <span class="o">+</span> <span class="n">25</span>
+    <span class="k">if</span> phone <span class="k">is</span> <span class="k">None</span><span class="o">:</span>
+        risk <span class="o">=</span> risk <span class="o">+</span> <span class="n">15</span>
+
+    <span class="k">if</span> risk <span class="o">&gt;=</span> <span class="n">25</span><span class="o">:</span>
+        flagged.append((risk<span class="o">,</span> order_id))
+    <span class="k">else</span><span class="o">:</span>
+        shipped.append((order_id<span class="o">,</span> value))
+
+flagged.sort(reverse<span class="o">=</span><span class="k">True</span>)
+
+<span class="f">print</span>(<span class="s">f&quot;</span>{len(orders)}<span class="s"> orders in&quot;</span>)
+<span class="f">print</span>(<span class="s">&quot;FLAGGED FOR REVIEW&quot;</span>)
+<span class="k">if</span> flagged<span class="o">:</span>
+    <span class="k">for</span> risk<span class="o">,</span> order_id <span class="k">in</span> flagged<span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f&quot;  </span>{order_id}<span class="s">  risk </span>{risk:&gt;3}<span class="s">&quot;</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">&quot;  none&quot;</span>)
+<span class="f">print</span>(<span class="s">&quot;REJECTED&quot;</span>)
+<span class="k">if</span> rejected<span class="o">:</span>
+    <span class="k">for</span> order_id<span class="o">,</span> reason <span class="k">in</span> rejected<span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f&quot;  </span>{order_id}<span class="s">  </span>{reason}<span class="s">&quot;</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">&quot;  none&quot;</span>)
+<span class="k">if</span> shipped<span class="o">:</span>
+    total <span class="o">=</span> <span class="n">0.0</span>
+    <span class="k">for</span> order_id<span class="o">,</span> value <span class="k">in</span> shipped<span class="o">:</span>
+        total <span class="o">=</span> total <span class="o">+</span> value
+    <span class="f">print</span>(<span class="s">f&quot;</span>{len(shipped)}<span class="s"> shipped, </span>{total:,.2f}<span class="s"> dispatched&quot;</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">&quot;nothing shipped&quot;</span>)</code></pre><div class="out">5 orders in
+FLAGGED FOR REVIEW
+  ORD-7101  risk  70
+REJECTED
+  ORD-7102  bad email
+  ORD-7104  no shipping to DE
+2 shipped, 940.00 dispatched</div>
+
+<p>Three things are worth pointing at.</p>
+
+<p><strong>The two <code>continue</code> statements are genuine guard clauses.</strong> Each says "this row is finished with, move on", and crucially there <em>is</em> code after them — the whole risk-scoring block — which is exactly the test for whether <code>continue</code> is earning its place. Written with nested <code>if</code>/<code>else</code> instead, the scoring logic would sit three levels deep.</p>
+
+<p><strong>The report is decoupled from the scan.</strong> The loop decides outcomes; the printing happens afterwards, from lists. That is why flagged orders can appear sorted by risk even though they were discovered in arrival order — something no amount of cleverness could have achieved while printing inside the loop.</p>
+
+<p><strong>Every summary is guarded.</strong> <code>if flagged:</code>, <code>if rejected:</code>, <code>if shipped:</code> — three branches that never fire on this data. A batch where nothing is rejected is the good day, and the good day should not print a heading with nothing under it.</p>
+
+<h2>What this chapter established</h2>
+
+<p>You can now keep what a scan finds. Concretely: the list literal and the empty list; <code>append</code> to grow, item assignment to replace, <code>pop</code>, <code>insert</code> and <code>remove</code> to edit, and the cost of each; the record-versus-collection distinction that decides between tuple and list; <code>sum</code>, <code>max</code> and <code>min</code>, built by hand first and then borrowed, along with the empty-sequence error that comes with two of them; selection sort written out in full, then <code>sorted</code> and <code>.sort</code> and the difference between them; sorting records by a chosen field by putting it in front; <code>enumerate</code> for position and item together; and <code>zip</code>, with the silent truncation that makes it dangerous.</p>
+
+<p>The exercises will not let you print inside the loop and call it done. Every one of them needs something collected first and reported afterwards.</p>
+
+<nav class="chapter-foot">
+  <a href="../chapter_03_batches/content.html" class="prv"><span class="dir">Previous</span>← Chapter 3</a>
+  <a href="exercises.html" class="nxt"><span class="dir">Next</span>Exercises →</a>
+</nav>
+
+</main>
+
+<script>
+(function () {
+  var START = [45, 12, 88, 3, 27];
+  var frames = [];
+  (function trace() {
+    var a = START.slice(), n = a.length;
+    function snap(i, j, s, note) {
+      frames.push({a: a.slice(), i: i, j: j, s: s, note: note});
+    }
+    snap(-1, -1, -1, "Unsorted. The finished region on the left is empty.");
+    for (var i = 0; i < n; i++) {
+      var s = i;
+      snap(i, -1, s, "Stand on position " + i + ". Assume a[" + i + "] = " + a[i] + " is the smallest of what is left.");
+      for (var j = i + 1; j < n; j++) {
+        if (a[j] < a[s]) {
+          snap(i, j, s, "a[" + j + "] = " + a[j] + " beats a[" + s + "] = " + a[s] + ". New smallest is position " + j + ".");
+          s = j;
+        } else {
+          snap(i, j, s, "a[" + j + "] = " + a[j] + " does not beat a[" + s + "] = " + a[s] + ". Keep looking.");
+        }
+      }
+      if (s === i) {
+        snap(i, -1, s, "Smallest was already at position " + i + ". No swap needed.");
+      } else {
+        snap(i, -1, s, "Swap position " + i + " with position " + s + ".");
+        var t = a[i]; a[i] = a[s]; a[s] = t;
+        snap(i, -1, -1, "Position " + i + " is now settled and will never move again.");
+      }
+    }
+    snap(n, -1, -1, "Sorted. " + (n * (n - 1) / 2) + " comparisons for " + n + " items.");
+  })();
+
+  var step = 0;
+  var boxes = document.getElementById("sortBoxes");
+  var state = document.getElementById("sortState");
+
+  function render() {
+    var f = frames[step];
+    boxes.innerHTML = "";
+    for (var k = 0; k < f.a.length; k++) {
+      var d = document.createElement("div");
+      var settled = k < f.i;
+      var bg = "transparent", weight = "400", op = "1";
+      if (k === f.j)      { bg = "rgba(200,140,0,.28)"; weight = "700"; }
+      else if (k === f.s) { bg = "rgba(0,150,90,.24)";  weight = "700"; }
+      else if (k === f.i) { bg = "rgba(60,120,220,.22)"; weight = "700"; }
+      if (settled) op = ".45";
+      d.setAttribute("style",
+        "min-width:52px;padding:10px 6px;text-align:center;border:1px solid currentColor;" +
+        "border-radius:4px;font-family:ui-monospace,monospace;background:" + bg +
+        ";font-weight:" + weight + ";opacity:" + op);
+      d.innerHTML = f.a[k] + "<div style='font-size:.72em;opacity:.6;font-weight:400'>" + k + "</div>";
+      boxes.appendChild(d);
+    }
+    var marks = [];
+    if (f.i >= 0 && f.i < f.a.length) marks.push("i = " + f.i);
+    if (f.j >= 0) marks.push("j = " + f.j);
+    if (f.s >= 0) marks.push("smallest = " + f.s);
+    state.innerHTML = "<div>" + (marks.join("&nbsp;&nbsp;·&nbsp;&nbsp;") || "&nbsp;") +
+                      "</div><div style='opacity:.75'>" + f.note +
+                      "</div><div style='opacity:.5;font-size:.85em'>step " + step + " of " + (frames.length - 1) + "</div>";
+  }
+
+  document.getElementById("sortStep").onclick = function () {
+    if (step < frames.length - 1) { step += 1; render(); }
+  };
+  document.getElementById("sortRun").onclick = function () {
+    step = frames.length - 1; render();
+  };
+  document.getElementById("sortReset").onclick = function () { step = 0; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

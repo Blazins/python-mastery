@@ -4,7 +4,7 @@ Running index of every concept, function, and structure **formally taught** so f
 If something feels unfamiliar during an exercise and it is not listed here, that is
 a syllabus gap, not a personal one — flag it.
 
-Last updated: after the Chapter 3 review. Chapter 3 §9 expanded 2026-08-27 —
+Last updated: after Chapter 4 was written. Chapter 3 §9 expanded 2026-08-27 —
 index-based nested loops were required by Ex.3 but never taught; see review.
 §8 extended 2026-08-28 — it taught where `continue` belongs but never where it
 is inert, and this map claimed "guard clause" vocabulary the section did not use.
@@ -168,6 +168,45 @@ repetition and literals-in-braces added after gaps were flagged in the Ch.1 revi
 
 ---
 
+### Chapter 4 — Keeping What You Find
+
+**Lists**
+- `[a, b, c]` literal, empty list `[]`, type `list`; no one-item comma trick needed
+- Every read operation a tuple has: indexing, negative indexing, `len`, `for`, `in`
+- **Mutable** vs **immutable** as a property that divides Python's types
+- Empty list is falsy; `if found:` as the idiomatic "did we collect anything"
+
+**Changing a list**
+- `.append(x)` — the list accumulator, the collection counterpart of a running total
+- Methods vs functions: `x.append(1)` against `len(x)`, and what the dot means
+- In-place methods return `None` — why `xs = xs.append(1)` destroys the list
+- Item assignment `xs[i] = v`, and the `TypeError` a tuple raises instead
+- `.pop()`, `.pop(0)`, `.insert(i, x)`, `.remove(x)`
+- `IndexError` from `pop` on empty; `ValueError` from `remove` of an absent value
+- Cost: end operations are cheap, front operations shift every later item
+
+**Choosing between them**
+- Record (fixed fields, different meanings) vs collection (many of one kind, unknown count)
+- A value that cannot change cannot be changed by accident
+
+**Built-in accumulators, after building them by hand**
+- `sum()`, `min()`, `max()` — and `max([])` / `min([])` raising `ValueError`
+- Why `None` rather than `0` is the right start for a running maximum
+- Short-circuit `or` making `biggest is None or v > biggest` safe
+
+**Sorting**
+- Selection sort written out in full, using the §9 nested scan and item assignment
+- `sorted(x)` returns a new list; `x.sort()` mutates and returns `None`
+- `reverse=True` as a keyword argument
+- Tuples compare field by field — sorting `(value, sku)` to order by value
+
+**`enumerate` and `zip`**
+- `for i, item in enumerate(x)`, and `start=1`
+- When `range(len(...))` is still required — dependent bounds, as in §9
+- `zip(a, b)` walking two sequences; **silently stops at the shorter one**
+
+---
+
 ---
 
 ## Known siblings, deliberately deferred
@@ -185,15 +224,18 @@ These exist, are real, and are coming — they are not gaps.
 | Functions | `def`, parameters, `return`, scope | Functions chapter |
 | Older string formatting | `%` formatting, `str.format()` | Mentioned when f-strings are revisited; f-strings are the modern default |
 | ~~Multiple assignment~~ | ~~`a, b = 1, 2`~~ | **Taught in Chapter 3** — the Ch.2 gap is closed |
-| Sequences that change | `list`, `.append()`, indexing assignment | Lists chapter (next) |
-| Index with item | `enumerate()` | Lists chapter |
-| Finding a position by value | `.index()`, `.count()` | Lists chapter — `.index()` returns only the *first* match, so it does not solve repeat-detection |
-| Two sequences in step | `zip()` | Lists chapter |
-| Built-in accumulators | `sum()`, `min()`, `max()`, `sorted()` | Lists chapter — after writing them by hand |
+| ~~Sequences that change~~ | ~~`list`, `.append()`, indexing assignment~~ | **Taught in Chapter 4** |
+| ~~Index with item~~ | ~~`enumerate()`~~ | **Taught in Chapter 4** |
+| Finding a position by value | `.index()`, `.count()` | **Still deferred.** Chapter 4 Ex.5 wants the first position of a repeat and is meant to be solved with a scan; `.index()` returns only the first match and `.count()` throws positions away. Both land in the strings chapter with `.find()` |
+| ~~Two sequences in step~~ | ~~`zip()`~~ | **Taught in Chapter 4** |
+| ~~Built-in accumulators~~ | ~~`sum()`, `min()`, `max()`, `sorted()`~~ | **Taught in Chapter 4**, after writing them by hand |
 | Loop as an expression | comprehensions | After lists and dictionaries |
 | Loop with no `break` | `for … else` | Mentioned with searching |
-| Lookup by key | `dict` | Dictionaries chapter |
+| Lookup by key | `dict` | Dictionaries chapter, next — the right answer to "count how many of each", flagged in Ch.4 §10 |
 | Input | `input()` | Deferred — exercises use fixed values so grading stays deterministic |
+| Sorting by a rule | `sorted(x, key=...)`, `.sort(key=...)` | Functions chapter, once `def` exists — Ch.4 sorts by rebuilding tuples instead |
+| Taking a section | slicing `x[1:3]` | Strings chapter |
+| Top N cheaply | `heapq` | Sorting and algorithms |
 
 ---
 
