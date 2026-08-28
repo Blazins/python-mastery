@@ -23,6 +23,8 @@ print("-" * 26)
 
 if stock >= weekly_shortfall:
     print(f"{sku} hasn't run out")
+elif stock <= 0:
+    print(f"{sku} run out")
 else:
     print(f"{sku} runs out in week {week + 2}")
 
