@@ -26,7 +26,7 @@ for sku, on_hand, reorder_level, active in stock:
             reorder_total += reorder_qty
         else:
             print(f"{sku}  {'OK':<12}{on_hand} on hand")
-    
+
     else:
         print(f"{sku}  {'SKIPPED':<12}discontinued")
         skipped_count += 1
