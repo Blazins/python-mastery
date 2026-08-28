@@ -8,14 +8,22 @@ week = 0
 
 weekly_shortfall = weekly_demand - weekly_restock
 
-for i in range(12):
-    print(f"week {i+1:>2}  stock {stock - weekly_shortfall:>4}")
-    stock = stock - weekly_shortfall
-    if stock <= weekly_shortfall:
-        print(f"week {i+2:>2}  stock {0:>4}")
+for week in range(12):
+    stock -= weekly_shortfall
+    if stock <= 0:
+        print(f"{sku} run out")
         break
+    else:
+        print(f"week {week+1:>2}  stock {stock:>4}")
+        if stock <= weekly_shortfall:
+            print(f"week {week+2:>2}  stock {0:>4}")
+            break
 
 print("-" * 26)
-print(f"{sku} runs out in week {i + 2}")
+
+if stock >= weekly_shortfall:
+    print(f"{sku} hasn't run out")
+else:
+    print(f"{sku} runs out in week {week + 2}")
 
 
