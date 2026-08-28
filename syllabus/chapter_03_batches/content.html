@@ -485,6 +485,21 @@ skipped <span class="o">=</span> <span class="n">0</span>
 <span class="f">print</span>(<span class="s">f"total </span>{total<span class="o">:</span>,.2f}<span class="s"> across </span>{<span class="f">len</span>(orders) <span class="o">-</span> skipped}<span class="s"> orders, </span>{skipped}<span class="s"> incomplete"</span>)</code></pre>
 <div class="out">total 1,142.50 across 2 orders, 1 incomplete</div>
 
+<p>That shape has a name worth knowing: a <strong>guard clause</strong>. Check for the case you cannot handle, deal with it, and leave — so that everything below the guard can assume the good case. It is the same move as an early <code>return</code> in a function, which you will meet in the functions chapter.</p>
+
+<p>Which points at the other half of the rule, the half that decides whether <code>continue</code> belongs at all: <strong><code>continue</code> only earns its place when there is code after it that you want to skip.</strong> Written like this, it does nothing whatsoever:</p>
+
+<pre><code><span class="k">for</span> order_id<span class="o">,</span> raw_value <span class="k">in</span> orders<span class="o">:</span>
+    <span class="k">if</span> raw_value <span class="k">is</span> <span class="k">None</span><span class="o">:</span>
+        skipped <span class="o">+=</span> 1
+        <span class="k">continue</span>
+    <span class="k">else</span><span class="o">:</span>
+        total <span class="o">+=</span> <span class="f">float</span>(raw_value)</code></pre>
+
+<p>The <code>continue</code> is inert. It is the last statement in its block, and the <code>else</code> means nothing follows it in that iteration anyway — so the loop was moving on regardless. It reads as though it prevents something, and it prevents nothing. Delete it and the program is identical.</p>
+
+<p>The test is mechanical: <strong>look at what comes after the <code>continue</code> in the loop body.</strong> If the answer is "nothing", the keyword is decoration. If the answer is "the real work", it is a guard clause and it is doing its job. The same question applies to <code>break</code> — but <code>break</code> exits the whole loop, so it almost always changes something, which is exactly why redundant <code>continue</code> is the common mistake and redundant <code>break</code> is not.</p>
+
 <p>Both keywords affect only the innermost loop containing them.</p>
 
 <h2>9. Loops inside loops</h2>

@@ -6,6 +6,8 @@ a syllabus gap, not a personal one — flag it.
 
 Last updated: after the Chapter 3 review. Chapter 3 §9 expanded 2026-08-27 —
 index-based nested loops were required by Ex.3 but never taught; see review.
+§8 extended 2026-08-28 — it taught where `continue` belongs but never where it
+is inert, and this map claimed "guard clause" vocabulary the section did not use.
 Chapter 1 amended 2026-08-20 — string
 repetition and literals-in-braces added after gaps were flagged in the Ch.1 review.
 
@@ -156,7 +158,9 @@ repetition and literals-in-braces added after gaps were flagged in the Ch.1 revi
 
 **Flow control inside loops**
 - `break` — abandon the loop; `continue` — abandon this iteration
-- Guard-clause shape: check, report, `continue`
+- Guard-clause shape: check, report, `continue` — named as such in §8
+- When `continue` is **inert**: if nothing follows it in the loop body it does
+  nothing at all. The test is "what comes after it?"
 - Both affect only the innermost loop
 
 **Formatting**
