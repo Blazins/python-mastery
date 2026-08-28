@@ -16,7 +16,6 @@ rejected_count = 0
 shipped_count = 0
 held_count = 0
 review_count = 0
-dispatched_value = 0.00
 dispatched_total = 0.00
 
 for order_id, email, raw_qty, dest, raw_value, age, bill, phone_number in orders:
@@ -56,7 +55,7 @@ for order_id, email, raw_qty, dest, raw_value, age, bill, phone_number in orders
         else:
             route = "SHIP"
             shipped_count += 1
-            dispatched_value = value
+            dispatched_total += value
 
         ship = 0.00 if value >= 500 else 7.95
         total = ship + value
@@ -65,4 +64,4 @@ for order_id, email, raw_qty, dest, raw_value, age, bill, phone_number in orders
 
 print("-" * 46)
 print(f"{len(orders)} orders   {shipped_count} shipped   {review_count} review   {held_count} held   {rejected_count} rejected")
-print(f"dispatched value {dispatched_value:,.2f}")
+print(f"dispatched value {dispatched_total:,.2f}")
