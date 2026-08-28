@@ -12,8 +12,10 @@ weak_spots.md
 progress_log.md
 schedule.md
 syllabus/*/review.md
+infrastructure.md
 
 # Scratch space — try things out here without it landing in a pull request.
 practice.py
+practice/
 scratch/
 scratch*.py

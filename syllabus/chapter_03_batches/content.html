@@ -485,6 +485,21 @@ skipped <span class="o">=</span> <span class="n">0</span>
 <span class="f">print</span>(<span class="s">f"total </span>{total<span class="o">:</span>,.2f}<span class="s"> across </span>{<span class="f">len</span>(orders) <span class="o">-</span> skipped}<span class="s"> orders, </span>{skipped}<span class="s"> incomplete"</span>)</code></pre>
 <div class="out">total 1,142.50 across 2 orders, 1 incomplete</div>
 
+<p>That shape has a name worth knowing: a <strong>guard clause</strong>. Check for the case you cannot handle, deal with it, and leave — so that everything below the guard can assume the good case. It is the same move as an early <code>return</code> in a function, which you will meet in the functions chapter.</p>
+
+<p>Which points at the other half of the rule, the half that decides whether <code>continue</code> belongs at all: <strong><code>continue</code> only earns its place when there is code after it that you want to skip.</strong> Written like this, it does nothing whatsoever:</p>
+
+<pre><code><span class="k">for</span> order_id<span class="o">,</span> raw_value <span class="k">in</span> orders<span class="o">:</span>
+    <span class="k">if</span> raw_value <span class="k">is</span> <span class="k">None</span><span class="o">:</span>
+        skipped <span class="o">+=</span> 1
+        <span class="k">continue</span>
+    <span class="k">else</span><span class="o">:</span>
+        total <span class="o">+=</span> <span class="f">float</span>(raw_value)</code></pre>
+
+<p>The <code>continue</code> is inert. It is the last statement in its block, and the <code>else</code> means nothing follows it in that iteration anyway — so the loop was moving on regardless. It reads as though it prevents something, and it prevents nothing. Delete it and the program is identical.</p>
+
+<p>The test is mechanical: <strong>look at what comes after the <code>continue</code> in the loop body.</strong> If the answer is "nothing", the keyword is decoration. If the answer is "the real work", it is a guard clause and it is doing its job. The same question applies to <code>break</code> — but <code>break</code> exits the whole loop, so it almost always changes something, which is exactly why redundant <code>continue</code> is the common mistake and redundant <code>break</code> is not.</p>
+
 <p>Both keywords affect only the innermost loop containing them.</p>
 
 <h2>9. Loops inside loops</h2>
@@ -503,6 +518,107 @@ MAN · FREE
 MAN · STANDARD</div>
 
 <p>Two warehouses times two bands gives four lines, and that multiplication is the thing to keep in mind: nesting a 1,000-item loop inside another 1,000-item loop is a million iterations. Most of the time a nested loop is genuinely what the problem needs — every combination of two things — but it is also where a program stops being fast without any single line looking wrong.</p>
+
+<h3>Nesting over one sequence: comparing a thing with its neighbours</h3>
+
+<p>The example above nests two loops over two <em>different</em> tuples. The other shape — and the one that unlocks a whole family of real problems — nests two loops over the <em>same</em> sequence.</p>
+
+<p>Consider a supplier feed where the same product code is sometimes listed twice, and you want to report every repeat. Notice what makes this unlike anything so far: <strong>a duplicate is not a property of a row, it is a relationship between two positions.</strong> No amount of looking at one row at a time can tell you it is a repeat. You have to hold two rows at once.</p>
+
+<p>That rules out the loop you have been writing. <code>for sku in feed:</code> hands you a value, and a value on its own does not know where it sits. To talk about <em>positions</em> you must loop over positions — which is exactly what <code>range(len(...))</code> gives you, and why §6 introduced it.</p>
+
+<pre><code>feed <span class="o">=</span> (<span class="s">"SKU-301"</span><span class="o">,</span> <span class="s">"SKU-302"</span><span class="o">,</span> <span class="s">"SKU-301"</span>)
+
+<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(feed))<span class="o">:</span>
+    <span class="k">for</span> j <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(feed))<span class="o">:</span>
+        <span class="k">if</span> feed[i] <span class="o">==</span> feed[j]<span class="o">:</span>
+            <span class="f">print</span>(<span class="s">f"match at </span>{i}<span class="s"> and </span>{j}<span class="s">"</span>)</code></pre>
+<div class="out">match at 0 and 0
+match at 0 and 2
+match at 1 and 1
+match at 2 and 0
+match at 2 and 2</div>
+
+<p>Both loops run over every position, so <code>i</code> and <code>j</code> each take every value from <code>0</code> to <code>2</code>. The mechanism works — <code>feed[i]</code> and <code>feed[j]</code> really are two rows held at the same moment — but the result is wrong twice over:</p>
+
+<ul>
+<li><strong>An item is compared with itself.</strong> When <code>i</code> and <code>j</code> are both <code>0</code> you are asking whether row 0 equals row 0. It always does. That is the <code>0 and 0</code> line.</li>
+<li><strong>Every genuine pair is reported twice</strong> — once as <code>0 and 2</code>, then backwards as <code>2 and 0</code>. Those are the same two rows.</li>
+</ul>
+
+<p>Both faults have a single cause: the inner loop revisits ground the outer loop has already covered. The fix is to say so directly — <strong>for each position, compare only against the positions <em>after</em> it.</strong></p>
+
+<pre><code><span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(feed))<span class="o">:</span>
+    <span class="k">for</span> j <span class="k">in</span> <span class="f">range</span>(i <span class="o">+</span> <span class="n">1</span><span class="o">,</span> <span class="f">len</span>(feed))<span class="o">:</span>
+        <span class="k">if</span> feed[i] <span class="o">==</span> feed[j]<span class="o">:</span>
+            <span class="f">print</span>(<span class="s">f"</span>{feed[i]}<span class="s"> repeats at positions </span>{i}<span class="s"> and </span>{j}<span class="s">"</span>)</code></pre>
+<div class="out">SKU-301 repeats at positions 0 and 2</div>
+
+<p>The only change is the inner <code>range</code>. Instead of starting at zero it starts at <code>i + 1</code> — <strong>the inner loop's bounds are computed from the outer loop's variable.</strong> This is the first time a loop in this chapter has depended on another loop, and it is the whole idea: <code>j</code> is now guaranteed greater than <code>i</code>, always. An item can never meet itself, and no pair can appear in both orders, because one order is never generated.</p>
+
+<p>Read <code>range(i + 1, len(feed))</code> aloud as <em>"every position after this one"</em> and the shape stops being arithmetic and becomes the sentence you meant.</p>
+
+<figure>
+<svg viewBox="0 0 620 300" role="img" aria-label="A five by five grid of position pairs. Only cells where j is greater than i are filled, forming a triangle above the diagonal.">
+<rect x="150" y="56" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="192" y="56" width="42" height="42" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1"/>
+<text x="213" y="81" text-anchor="middle" font-size="11" fill="currentColor">0,1</text>
+<rect x="234" y="56" width="42" height="42" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1"/>
+<text x="255" y="81" text-anchor="middle" font-size="11" fill="currentColor">0,2</text>
+<rect x="276" y="56" width="42" height="42" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1"/>
+<text x="297" y="81" text-anchor="middle" font-size="11" fill="currentColor">0,3</text>
+<rect x="318" y="56" width="42" height="42" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1"/>
+<text x="339" y="81" text-anchor="middle" font-size="11" fill="currentColor">0,4</text>
+<rect x="150" y="98" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="192" y="98" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="234" y="98" width="42" height="42" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1"/>
+<text x="255" y="123" text-anchor="middle" font-size="11" fill="currentColor">1,2</text>
+<rect x="276" y="98" width="42" height="42" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1"/>
+<text x="297" y="123" text-anchor="middle" font-size="11" fill="currentColor">1,3</text>
+<rect x="318" y="98" width="42" height="42" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1"/>
+<text x="339" y="123" text-anchor="middle" font-size="11" fill="currentColor">1,4</text>
+<rect x="150" y="140" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="192" y="140" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="234" y="140" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="276" y="140" width="42" height="42" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1"/>
+<text x="297" y="165" text-anchor="middle" font-size="11" fill="currentColor">2,3</text>
+<rect x="318" y="140" width="42" height="42" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1"/>
+<text x="339" y="165" text-anchor="middle" font-size="11" fill="currentColor">2,4</text>
+<rect x="150" y="182" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="192" y="182" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="234" y="182" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="276" y="182" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="318" y="182" width="42" height="42" fill="currentColor" opacity="0.13" stroke="currentColor" stroke-width="1"/>
+<text x="339" y="207" text-anchor="middle" font-size="11" fill="currentColor">3,4</text>
+<rect x="150" y="224" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="192" y="224" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="234" y="224" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="276" y="224" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<rect x="318" y="224" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+<text x="171" y="46" text-anchor="middle" font-size="12" fill="currentColor">0</text>
+<text x="213" y="46" text-anchor="middle" font-size="12" fill="currentColor">1</text>
+<text x="255" y="46" text-anchor="middle" font-size="12" fill="currentColor">2</text>
+<text x="297" y="46" text-anchor="middle" font-size="12" fill="currentColor">3</text>
+<text x="339" y="46" text-anchor="middle" font-size="12" fill="currentColor">4</text>
+<text x="138" y="81" text-anchor="end" font-size="12" fill="currentColor">0</text>
+<text x="138" y="123" text-anchor="end" font-size="12" fill="currentColor">1</text>
+<text x="138" y="165" text-anchor="end" font-size="12" fill="currentColor">2</text>
+<text x="138" y="207" text-anchor="end" font-size="12" fill="currentColor">3</text>
+<text x="138" y="249" text-anchor="end" font-size="12" fill="currentColor">4</text>
+<text x="255" y="18" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.7">j — every position after i</text>
+<text x="26" y="161" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.7" transform="rotate(-90 26 161)">i — the position you stand on</text>
+</svg>
+<figcaption>Every pair the scan visits. The empty diagonal is a position compared with itself; the empty lower half is a pair already seen in the other order.</figcaption>
+</figure>
+
+<p>Count the filled cells: for five positions there are ten, not twenty-five. A scan like this makes <code>n × (n − 1) ÷ 2</code> comparisons — still the multiplication warned about above, still growing with the square of the input, but half of it and without the diagonal.</p>
+
+<div class="aside">
+  <span class="label">Pairs are not counts</span>
+  It is tempting to answer "which rows repeat?" by counting occurrences — a running tally per code. Resist it. The moment you increment a counter you have thrown away <em>where</em> the item was, and positions are what the question asked for. This also explains a behaviour that otherwise looks like it needs special handling: a code appearing three times produces three pairs, not two, because there are three ways to choose two positions out of three. Scan forward from every position and that falls out on its own. Count first, and no later work can recover it.
+</div>
+
+<p>This shape — outer loop over every item, inner loop over everything after it — is worth recognising on sight. It is how you find duplicates, compare every pair, detect collisions, or check whether any two things in a collection conflict.</p>
 
 <h2>10. What this makes possible, and what is still coming</h2>
 
