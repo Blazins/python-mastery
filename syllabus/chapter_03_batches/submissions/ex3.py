@@ -10,4 +10,7 @@ for i in range(len(feed)):
             pairs += 1
 
 print("-" * 38)
-print(f"{len(feed)} rows, {pairs} duplicate pairs")
+if len(feed) <= 0:
+    print(f"no duplicates")
+else:
+    print(f"{len(feed)} rows, {pairs} duplicate pairs")
