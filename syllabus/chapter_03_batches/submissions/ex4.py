@@ -11,7 +11,6 @@ weekly_shortfall = weekly_demand - weekly_restock
 for week in range(12):
     stock -= weekly_shortfall
     if stock <= 0:
-        print(f"{sku} run out")
         break
     else:
         print(f"week {week+1:>2}  stock {stock:>4}")
@@ -21,7 +20,7 @@ for week in range(12):
 
 print("-" * 26)
 
-if stock >= weekly_shortfall:
+if stock > weekly_shortfall:
     print(f"{sku} hasn't run out")
 elif stock <= 0:
     print(f"{sku} run out")
