@@ -421,7 +421,10 @@ Line total: £13.049999999999999</div>
 
 <p>This is a small mechanism with a large consequence for layout: <strong>it decides which side of the line carries the width.</strong> Consider printing a label and a number together. You can pad the number to whatever width happens to make the columns line up under that particular label:</p>
 
-<pre><code><span class="f">print</span>(<span class="s">f"Full cartons: </span>{full_cartons<span class="o">:</span>&gt;5}<span class="s">"</span>)
+<pre><code>full_cartons <span class="o">=</span> <span class="n">12</span>
+loose_units <span class="o">=</span> <span class="n">7</span>
+
+<span class="f">print</span>(<span class="s">f"Full cartons: </span>{full_cartons<span class="o">:</span>&gt;5}<span class="s">"</span>)
 <span class="f">print</span>(<span class="s">f"Loose units: </span>{loose_units<span class="o">:</span>&gt;6}<span class="s">"</span>)</code></pre>
 
 <p>Those widths — <code>5</code> and <code>6</code> — are not facts about the data. They are compensation for the labels being different lengths, arrived at by trial and error. Rename <code>Full cartons</code> to <code>Cartons</code> and the alignment silently breaks, and you retune by hand again. Pad the <em>label</em> instead and the numbers stop caring what the labels are called:</p>
