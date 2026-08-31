@@ -4,7 +4,9 @@ Running index of every concept, function, and structure **formally taught** so f
 If something feels unfamiliar during an exercise and it is not listed here, that is
 a syllabus gap, not a personal one — flag it.
 
-Last updated: after Chapter 4 was written. Chapter 3 §9 expanded 2026-08-27 —
+Last updated: after Chapter 4 was written. §9 extended 2026-08-31 — both `zip`
+examples used flat scalar sequences, while Ex.4 needs `zip` over rows; the
+two-step unpacking appeared only once, inside an unrelated worked example. Chapter 3 §9 expanded 2026-08-27 —
 index-based nested loops were required by Ex.3 but never taught; see review.
 §8 extended 2026-08-28 — it taught where `continue` belongs but never where it
 is inert, and this map claimed "guard clause" vocabulary the section did not use.
@@ -204,6 +206,10 @@ repetition and literals-in-braces added after gaps were flagged in the Ch.1 revi
 - `for i, item in enumerate(x)`, and `start=1`
 - When `range(len(...))` is still required — dependent bounds, as in §9
 - `zip(a, b)` walking two sequences; **silently stops at the shorter one**
+- `zip` over sequences of **rows**: each name binds to a whole tuple, so there
+  are two unpackings, not one — `old_sku, old_price = old` after the header,
+  or nested in the header as `for (a, b), (c, d) in zip(x, y)`
+- Unpacking a name that holds a tuple, not just a literal — `a, b = pair`
 
 ---
 
