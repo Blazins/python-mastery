@@ -381,6 +381,46 @@ SKU-104 3</div>
 
 <p>This is the single most dangerous thing in this chapter, because it is data loss that looks like success. If two sequences are supposed to be the same length, check it — <code>if len(skus) != len(counts):</code> — rather than trusting that they are.</p>
 
+<h3>When the two sequences hold rows, not values</h3>
+
+<p>Both examples above zip two <em>flat</em> sequences — every item is a single value, so <code>for sku, count in zip(...)</code> lands two values in two names and there is nothing more to do.</p>
+
+<p>Real data is more often two sequences of <strong>records</strong>: a supplier's stated quantities against a warehouse's counted ones, last month's prices against this month's. Each item on each side is a whole tuple, and that changes what the loop header gives you.</p>
+
+<pre><code>before <span class="o">=</span> ((<span class="s">&quot;SKU-101&quot;</span><span class="o">,</span> <span class="n">4.99</span>)<span class="o">,</span> (<span class="s">&quot;SKU-104&quot;</span><span class="o">,</span> <span class="n">12.50</span>))
+after  <span class="o">=</span> ((<span class="s">&quot;SKU-101&quot;</span><span class="o">,</span> <span class="n">5.49</span>)<span class="o">,</span> (<span class="s">&quot;SKU-104&quot;</span><span class="o">,</span> <span class="n">12.50</span>))
+
+<span class="k">for</span> old<span class="o">,</span> new <span class="k">in</span> <span class="f">zip</span>(before<span class="o">,</span> after)<span class="o">:</span>
+    <span class="f">print</span>(old<span class="o">,</span> new)</code></pre><div class="out">(&#x27;SKU-101&#x27;, 4.99) (&#x27;SKU-101&#x27;, 5.49)
+(&#x27;SKU-104&#x27;, 12.5) (&#x27;SKU-104&#x27;, 12.5)</div>
+
+<p>Look carefully at what <code>old</code> and <code>new</code> are bound to. Not a SKU and not a price — <strong>each one is an entire row</strong>. <code>zip</code> took one item from each sequence, and this time an item happens to be a tuple. Printing them shows the parentheses, which is the tell.</p>
+
+<p>So there are two unpackings to do, not one, and they happen at different moments. <code>zip</code> pairs the rows; you still have to open each row:</p>
+
+<pre><code><span class="k">for</span> old<span class="o">,</span> new <span class="k">in</span> <span class="f">zip</span>(before<span class="o">,</span> after)<span class="o">:</span>
+    old_sku<span class="o">,</span> old_price <span class="o">=</span> old
+    new_sku<span class="o">,</span> new_price <span class="o">=</span> new
+    <span class="f">print</span>(<span class="s">f&quot;</span>{old_sku}<span class="s">  </span>{old_price}<span class="s"> -&gt; </span>{new_price}<span class="s">&quot;</span>)</code></pre><div class="out">SKU-101  4.99 -&gt; 5.49
+SKU-104  12.5 -&gt; 12.5</div>
+
+<p><code>old_sku, old_price = old</code> is the same packing-and-unpacking from Chapter 3, used on a name rather than on a literal: the right-hand side is a two-item tuple, the left-hand side is two names, and Python matches them by position. It is exactly <code>a, b = 1, 2</code> with the pair already assembled.</p>
+
+<p>Python will also do both unpackings in the loop header, by writing the shape you expect on each side:</p>
+
+<pre><code><span class="k">for</span> (old_sku<span class="o">,</span> old_price)<span class="o">,</span> (new_sku<span class="o">,</span> new_price) <span class="k">in</span> <span class="f">zip</span>(before<span class="o">,</span> after)<span class="o">:</span>
+    <span class="f">print</span>(<span class="s">f&quot;</span>{old_sku}<span class="s">  </span>{old_price}<span class="s"> -&gt; </span>{new_price}<span class="s">&quot;</span>)</code></pre><div class="out">SKU-101  4.99 -&gt; 5.49
+SKU-104  12.5 -&gt; 12.5</div>
+
+<p>The parentheses on the left are not decoration — they describe the structure being taken apart. Read it as "each thing <code>zip</code> hands me is a pair of pairs; name all four parts". Identical result, one line instead of three.</p>
+
+<div class="aside">
+  <span class="label">Which to write</span>
+  The three-line version is easier to read while the shape is still unfamiliar, and there is no cost to preferring it. The compact form earns its place once the structure is obvious at a glance, or when the loop body is long enough that two extra lines of unpacking at the top get in the way. Neither is more correct.
+</div>
+
+<p>One thing that does <em>not</em> change: <code>zip</code> still stops at the shorter sequence, silently. Rows make that worse rather than better, because two feeds of records that disagree in length are usually a sign that something upstream went wrong — exactly the case you most want reported rather than quietly truncated.</p>
+
 <h2>10. What this makes possible, and what is still coming</h2>
 
 <p>You can now collect results whose size you do not know in advance, change them after the fact, and put them in order. Combined with the previous three chapters, that is enough to write the shape of most small data-processing programs: read a batch, validate it, route it, gather what matters, order it, report it.</p>
