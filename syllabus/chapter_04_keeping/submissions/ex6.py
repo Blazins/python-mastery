@@ -19,7 +19,7 @@ ship_count = 0
 held = []
 review = []
 ship = []
-total = 0.00
+order_total = 0.00
 total_dispatched = 0.00
 
 for order_id, email, dest, value, account_age_days, billing_country, phone in orders:
@@ -55,8 +55,8 @@ for order_id, email, dest, value, account_age_days, billing_country, phone in or
                 ship_cost = 0.00
             else:
                 ship_cost = 7.95
-            total = float_value + ship_cost
-            ship.append((total, order_id))
+            order_total = float_value + ship_cost
+            ship.append((order_total, order_id))
             ship_count += 1
 
 print("HELD")
@@ -85,9 +85,9 @@ else:
 
 print("SHIPPED")
 if ship:
-    for total, order_id in sorted(ship, reverse = True):
-        print(f"  {order_id}  {total:>9,.2f}")
-        total_dispatched += total
+    for order_total, order_id in sorted(ship, reverse = True):
+        print(f"  {order_id}  {order_total:>9,.2f}")
+        total_dispatched += order_total
 else:
     print("  none")
 
