@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 5 &middot; Reading What Arrives</title>
+<link rel="stylesheet" href="../../assets/textbook.css">
+</head>
+<body>
+<main class="page">
+
+<header class="chapter-head">
+  <div class="chapter-eyebrow">Chapter Five</div>
+  <h1>Reading What Arrives</h1>
+  <p class="chapter-standfirst">Every value you have been given so far arrived pre-split, correctly typed, and in a tuple someone else built. Real data does not. It arrives as one long line of text with a delimiter in it, and turning that into something a program can use is the most common job in software.</p>
+</header>
+
+<h2>Why this chapter exists</h2>
+
+<p>Look at how every exercise so far has started:</p><pre><code>orders <span class="o">=</span> (
+    (<span class="s">&quot;ORD-8101&quot;</span><span class="o">,</span> <span class="s">&quot;a@shop.co&quot;</span><span class="o">,</span> <span class="s">&quot;GB&quot;</span><span class="o">,</span> <span class="s">&quot;1240.00&quot;</span><span class="o">,</span> <span class="n">3</span><span class="o">,</span> <span class="s">&quot;GB&quot;</span><span class="o">,</span> <span class="k">None</span>)<span class="o">,</span>
+    (<span class="s">&quot;ORD-8102&quot;</span><span class="o">,</span> <span class="s">&quot;bad.email&quot;</span><span class="o">,</span> <span class="s">&quot;GB&quot;</span><span class="o">,</span>  <span class="s">&quot;200.00&quot;</span><span class="o">,</span> <span class="n">400</span><span class="o">,</span> <span class="s">&quot;GB&quot;</span><span class="o">,</span> <span class="s">&quot;07700900123&quot;</span>)<span class="o">,</span>
+)</code></pre>
+
+<p>Somebody has already done the hard part. The row is split into fields, the fields are in the right order, the numbers that should be numbers are numbers and the ones that should be text are text. All you had to do was unpack it.</p>
+
+<p>That file does not exist. What actually arrives from a supplier, a log, an export or an API is this:</p><pre><code>line <span class="o">=</span> <span class="s">&quot;ORD-8101|a@shop.co|GB|1240.00|3|GB|&quot;</span></code></pre>
+
+<p>One string. Seven fields you cannot yet reach, a delimiter you have to know about, an empty last field that means "no phone number", and a number that is currently the text <code>"1240.00"</code>. Before any of Chapter 4's list-building can happen, somebody has to turn that line into a row — and from this chapter onward, that somebody is you.</p>
+
+<div class="aside">
+  <span class="label">Why this is the most common job in software</span>
+  Data crosses every boundary as text. A file is text. An HTTP response is text. A log line is text. A CSV export, a config file, a command-line argument, a form submission — all text. Programs hold structured values in memory, but the moment anything leaves one program and enters another it flattens into characters, and the receiving program has to rebuild the structure. Parsing is not a beginner topic you pass through; it is a large fraction of what production code actually does.
+</div>
+
+<p>The running example is a supplier feed arriving as raw text: inconsistent spacing, mixed capitalisation, missing fields, and the occasional line that should never have been sent.</p>\n\n<h2>1. A string is a sequence, and you already know how to use it</h2>
+
+<p>Chapter 3 mentioned this in passing and Chapter 4 leaned on it without saying so. It is worth stating outright: <strong>a string is a sequence of characters</strong>, and every read operation you learned for tuples and lists works on one.</p><pre><code>code <span class="o">=</span> <span class="s">&quot;ORD-8101&quot;</span>
+
+<span class="f">print</span>(<span class="f">len</span>(code))
+<span class="f">print</span>(code[<span class="n">0</span>])
+<span class="f">print</span>(code[<span class="o">-</span><span class="n">1</span>])
+<span class="f">print</span>(<span class="s">&quot;ORD&quot;</span> <span class="k">in</span> code)
+<span class="f">print</span>(<span class="s">&quot;XYZ&quot;</span> <span class="k">in</span> code)
+
+<span class="k">for</span> ch <span class="k">in</span> <span class="s">&quot;GB&quot;</span><span class="o">:</span>
+    <span class="f">print</span>(ch)</code></pre><div class="out">8
+O
+1
+True
+False
+G
+B</div>
+
+<p><code>len</code> counts characters. <code>code[0]</code> indexes from zero, <code>code[-1]</code> counts back from the end, and <code>for ch in ...</code> walks one character at a time — exactly as they did for a tuple of orders. Asking for a position that does not exist raises <code>IndexError</code>, same as before.</p>
+
+<p><code>in</code> is the one that behaves differently, and Chapter 3 flagged it: on a tuple or list, <code>in</code> tests whether an item is a <strong>member</strong>; on a string it tests whether text appears <strong>anywhere inside</strong> as a substring. That is why <code>"ORD" in code</code> is <code>True</code> even though <code>"ORD"</code> is not a character.</p><pre><code><span class="f">print</span>(<span class="s">&quot;O&quot;</span> <span class="k">in</span> <span class="s">&quot;ORD-8101&quot;</span>)
+<span class="f">print</span>(<span class="s">&quot;D-8&quot;</span> <span class="k">in</span> <span class="s">&quot;ORD-8101&quot;</span>)
+<span class="f">print</span>(<span class="s">&quot;O&quot;</span> <span class="k">in</span> (<span class="s">&quot;ORD-8101&quot;</span><span class="o">,</span> <span class="s">&quot;ORD-8102&quot;</span>))
+<span class="f">print</span>(<span class="s">&quot;ORD&quot;</span> <span class="k">in</span> (<span class="s">&quot;ORD-8101&quot;</span><span class="o">,</span> <span class="s">&quot;ORD-8102&quot;</span>))</code></pre><div class="out">True
+True
+False
+False</div>
+
+<p>The last two are the trap in the round. On the tuple, <code>in</code> compares against whole items — and <code>"ORD"</code> is not equal to <code>"ORD-8101"</code>, so it is <code>False</code>. Same keyword, same-looking data, opposite question. <strong>Whenever you write <code>in</code>, know whether the thing on the right is a string or a collection.</strong></p>\n\n<h2>2. Slicing: taking a section</h2>
+
+<p>Indexing gives you one character. <strong>Slicing</strong> gives you a run of them, and it is written with a colon inside the brackets:</p><pre><code>code <span class="o">=</span> <span class="s">&quot;ORD-8101&quot;</span>
+
+<span class="f">print</span>(code[<span class="n">0</span><span class="o">:</span><span class="n">3</span>])
+<span class="f">print</span>(code[<span class="n">4</span><span class="o">:</span><span class="n">8</span>])
+<span class="f">print</span>(code[<span class="o">:</span><span class="n">3</span>])
+<span class="f">print</span>(code[<span class="n">4</span><span class="o">:</span>])
+<span class="f">print</span>(code[<span class="o">-</span><span class="n">4</span><span class="o">:</span>])</code></pre><div class="out">ORD
+8101
+ORD
+8101
+8101</div>
+
+<div class="definition">
+  <div class="label">Definition</div>
+  <p>A <strong>slice</strong> <code>s[start:stop]</code> produces a new string containing the characters from position <code>start</code> up to <strong>but not including</strong> <code>stop</code>. Omitting <code>start</code> means "from the beginning"; omitting <code>stop</code> means "to the end". Negative positions count back from the end.</p>
+</div>
+
+<p>The exclusive end is the same convention as <code>range(0, 3)</code> giving <code>0, 1, 2</code> — and it is deliberate, because it makes two useful things true. <code>s[0:3]</code> is exactly three characters long, so <code>stop - start</code> is the length. And <code>s[:n]</code> and <code>s[n:]</code> fit together perfectly with nothing lost or duplicated:</p><pre><code>code <span class="o">=</span> <span class="s">&quot;ORD-8101&quot;</span>
+<span class="f">print</span>(code[<span class="o">:</span><span class="n">4</span>] <span class="o">+</span> code[<span class="n">4</span><span class="o">:</span>])
+<span class="f">print</span>(code[<span class="o">:</span><span class="n">4</span>] <span class="o">+</span> code[<span class="n">4</span><span class="o">:</span>] <span class="o">==</span> code)</code></pre><div class="out">ORD-8101
+True</div>
+
+<p>Slicing never raises <code>IndexError</code>. Ask for more than exists and you get whatever is there, including the empty string — which is occasionally a bug that hides, so it is worth knowing:</p><pre><code>code <span class="o">=</span> <span class="s">&quot;GB&quot;</span>
+<span class="f">print</span>(code[<span class="n">0</span>])
+<span class="f">print</span>(code[<span class="n">0</span><span class="o">:</span><span class="n">99</span>])
+<span class="f">print</span>(code[<span class="n">5</span><span class="o">:</span><span class="n">9</span>])
+<span class="f">print</span>(<span class="f">len</span>(code[<span class="n">5</span><span class="o">:</span><span class="n">9</span>]))</code></pre><div class="out">G
+GB
+
+0</div>
+
+<p><code>code[5:9]</code> on a two-character string is not an error. It is the empty string, printed as a blank line. Compare that with <code>code[5]</code>, which <em>would</em> raise <code>IndexError</code> — indexing is strict, slicing is forgiving.</p>
+
+<p>Slicing works on tuples and lists too, producing a new tuple or list. That is why it was deferred to this chapter rather than taught in Chapter 4 — the syntax belongs to sequences in general, and strings are where it earns its keep first.</p><pre><code>skus <span class="o">=</span> [<span class="s">&quot;SKU-1&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-2&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-3&quot;</span><span class="o">,</span> <span class="s">&quot;SKU-4&quot;</span>]
+<span class="f">print</span>(skus[<span class="o">:</span><span class="n">2</span>])
+<span class="f">print</span>(skus[<span class="n">2</span><span class="o">:</span>])</code></pre><div class="out">[&#x27;SKU-1&#x27;, &#x27;SKU-2&#x27;]
+[&#x27;SKU-3&#x27;, &#x27;SKU-4&#x27;]</div>
+
+<p>That gives you "the top three" for free, incidentally — Chapter 4's exercise 3 counted to three with <code>enumerate</code> and <code>break</code> because slicing had not arrived yet. <code>sorted(x, reverse=True)[:3]</code> does the same job in one expression, and you now understand what both are doing.</p>\n\n<h2>3. Strings cannot be changed</h2>
+
+<p>Chapter 4 divided Python's types into two camps: mutable and immutable. Lists could be changed in place; tuples refused. <strong>Strings are immutable</strong>, and they refuse in exactly the same way:</p><pre><code>code <span class="o">=</span> <span class="s">&quot;ORD-8101&quot;</span>
+code[<span class="n">0</span>] <span class="o">=</span> <span class="s">&quot;X&quot;</span></code></pre><div class="out">Traceback (most recent call last):
+  File &quot;example.py&quot;, line 2, in &lt;module&gt;
+    code[0] = &quot;X&quot;
+    ~~~~^^^
+TypeError: &#x27;str&#x27; object does not support item assignment</div>
+
+<p>The same error, word for word, that a tuple gives. Which means every string operation that appears to change something is really <strong>producing a new string and leaving the original alone</strong> — and if you want to keep the result, you have to say so:</p><pre><code>raw <span class="o">=</span> <span class="s">&quot;  gb  &quot;</span>
+raw.strip()
+<span class="f">print</span>(<span class="s">f&quot;[</span>{raw}<span class="s">]&quot;</span>)
+
+cleaned <span class="o">=</span> raw.strip()
+<span class="f">print</span>(<span class="s">f&quot;[</span>{cleaned}<span class="s">]&quot;</span>)</code></pre><div class="out">[  gb  ]
+[gb]</div>
+
+<p>The first <code>raw.strip()</code> runs, produces a cleaned string, and throws it away, because nothing was assigned. <code>raw</code> is untouched. This is the mirror image of the <code>append</code> trap from Chapter 4 §2 — there, a method changed the object and returned <code>None</code>, so assigning the result destroyed your list. Here, a method returns a new value and changes nothing, so <em>not</em> assigning the result loses your work.</p>
+
+<div class="aside">
+  <span class="label">One rule that covers both</span>
+  Methods on <strong>mutable</strong> objects tend to change the object and return <code>None</code> — <code>list.append</code>, <code>list.sort</code>. Methods on <strong>immutable</strong> objects cannot change anything, so they return a new value — <code>str.strip</code>, <code>str.replace</code>. The tell is the return: if a method hands you something back, that something is the point. If it hands back <code>None</code>, the change already happened.
+</div>\n\n<h2>4. The methods that do the everyday work</h2>
+
+<p>These are methods, called with a dot, exactly like <code>list.append</code> — but each returns a new string rather than modifying anything.</p>
+
+<h3>Cleaning</h3><pre><code>raw <span class="o">=</span> <span class="s">&quot;   GB\n&quot;</span>
+
+<span class="f">print</span>(<span class="s">f&quot;[</span>{raw.strip()}<span class="s">]&quot;</span>)
+<span class="f">print</span>(<span class="s">f&quot;[</span>{raw.rstrip()}<span class="s">]&quot;</span>)
+<span class="f">print</span>(<span class="s">f&quot;[</span>{&#x27;xxORDxx&#x27;.strip(&#x27;x&#x27;)}<span class="s">]&quot;</span>)</code></pre><div class="out">[GB]
+[   GB]
+[ORD]</div>
+
+<p><code>strip()</code> removes whitespace from both ends — spaces, tabs, and newlines, which matters enormously when reading files, since every line arrives with a <code>\n</code> on the end. <code>lstrip()</code> and <code>rstrip()</code> do one end only. Given an argument, <code>strip</code> removes any of <em>those</em> characters instead of whitespace. It never touches the middle.</p>
+
+<h3>Case</h3><pre><code><span class="f">print</span>(<span class="s">&quot;gb&quot;</span>.upper())
+<span class="f">print</span>(<span class="s">&quot;GB&quot;</span>.lower())
+<span class="f">print</span>(<span class="s">&quot;gb&quot;</span> <span class="o">==</span> <span class="s">&quot;GB&quot;</span>)
+<span class="f">print</span>(<span class="s">&quot;gb&quot;</span>.upper() <span class="o">==</span> <span class="s">&quot;GB&quot;</span>)</code></pre><div class="out">GB
+gb
+False
+True</div>
+
+<p>Comparison is case-sensitive, so <code>"gb" == "GB"</code> is <code>False</code>. When input comes from humans or from several systems at once, **normalise before comparing** — pick one case, convert, then compare. Doing it on both sides is the safe habit: <code>a.lower() == b.lower()</code>.</p>
+
+<h3>Testing</h3><pre><code>code <span class="o">=</span> <span class="s">&quot;ORD-8101&quot;</span>
+
+<span class="f">print</span>(code.startswith(<span class="s">&quot;ORD&quot;</span>))
+<span class="f">print</span>(code.endswith(<span class="s">&quot;01&quot;</span>))
+<span class="f">print</span>(<span class="s">&quot;8101&quot;</span>.isdigit())
+<span class="f">print</span>(<span class="s">&quot;81a1&quot;</span>.isdigit())
+<span class="f">print</span>(<span class="s">&quot;&quot;</span>.isdigit())</code></pre><div class="out">True
+True
+True
+False
+False</div>
+
+<p><code>startswith</code> and <code>endswith</code> return <code>True</code> or <code>False</code> and are clearer than slicing for the same job — <code>code.startswith("ORD")</code> says what it means, where <code>code[:3] == "ORD"</code> makes the reader count. <code>isdigit()</code> is the guard you want before <code>int()</code>: it tells you whether the conversion will succeed instead of finding out by crashing. Note the empty string is <code>False</code>, which is the right answer and a common oversight.</p>
+
+<h3>Finding and replacing</h3><pre><code>line <span class="o">=</span> <span class="s">&quot;ORD-8101|a@shop.co|GB&quot;</span>
+
+<span class="f">print</span>(line.find(<span class="s">&quot;|&quot;</span>))
+<span class="f">print</span>(line.find(<span class="s">&quot;@&quot;</span>))
+<span class="f">print</span>(line.find(<span class="s">&quot;ZZZ&quot;</span>))
+<span class="f">print</span>(line.count(<span class="s">&quot;|&quot;</span>))
+<span class="f">print</span>(<span class="s">&quot;a  b   c&quot;</span>.replace(<span class="s">&quot; &quot;</span><span class="o">,</span> <span class="s">&quot;&quot;</span>))</code></pre><div class="out">8
+10
+-1
+2
+abc</div>
+
+<p><code>find</code> returns the position of the first occurrence, or <code>-1</code> if there is none. That <code>-1</code> is a real trap: it is a valid index, so using it without checking silently reads the <em>last</em> character instead of failing. Always compare against <code>-1</code> before using the result.</p>
+
+<p><code>count</code> counts non-overlapping occurrences, and <code>replace(old, new)</code> replaces every occurrence — both returning new values, changing nothing.</p>\n\n<h2>5. Build before you borrow: splitting by hand</h2>
+
+<p>The single most useful string operation is turning one delimited line into a list of fields. Before meeting the built-in, write one — using only Chapter 4's lists and this chapter's slicing.</p><pre><code>line <span class="o">=</span> <span class="s">&quot;ORD-8101|a@shop.co|GB&quot;</span>
+
+fields <span class="o">=</span> []
+field_start <span class="o">=</span> <span class="n">0</span>
+
+<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(line))<span class="o">:</span>
+    <span class="k">if</span> line[i] <span class="o">==</span> <span class="s">&quot;|&quot;</span><span class="o">:</span>
+        fields.append(line[field_start<span class="o">:</span>i])
+        field_start <span class="o">=</span> i <span class="o">+</span> <span class="n">1</span>
+
+fields.append(line[field_start<span class="o">:</span>])
+
+<span class="f">print</span>(fields)
+<span class="f">print</span>(<span class="f">len</span>(fields))</code></pre><div class="out">[&#x27;ORD-8101&#x27;, &#x27;a@shop.co&#x27;, &#x27;GB&#x27;]
+3</div>
+
+<p>Walk it, because every part matters. <code>field_start</code> remembers where the current field began — it is an accumulator holding a position rather than a total. The loop looks at each character; when it finds a delimiter, everything from <code>field_start</code> up to <strong>but not including</strong> the delimiter is one complete field, which is exactly what the slice <code>line[field_start:i]</code> gives. Then <code>field_start</code> moves to <code>i + 1</code>, just past the delimiter, ready for the next field.</p>
+
+<p>The line after the loop is the one people forget. <strong>The last field has no delimiter after it</strong>, so nothing inside the loop ever appends it. <code>line[field_start:]</code> — from the last delimiter to the end — completes the job. Delete that line and you silently lose the final field of every row, which is the classic hand-rolled parser bug.</p>
+
+
+<div class="demo" id="splitDemo">
+  <div class="label">Step through a hand-rolled split</div>
+  <p>The parser from §5, one character at a time. Watch <code>field_start</code> stay put while <code>i</code> advances, and note what happens on the very last step — the field that no delimiter ever completes.</p>
+  <div class="demo-body">
+    <div id="splitChars" style="display:flex;gap:2px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div id="splitState" style="font-family:ui-monospace,monospace;font-size:.9em;line-height:1.8"></div>
+  </div>
+  <div class="demo-controls">
+    <button id="splitStep">Step</button>
+    <button id="splitRun">Run to end</button>
+    <button id="splitReset">Reset</button>
+    <span style="font-size:.78rem;opacity:.5;font-family:ui-monospace,monospace" id="splitCount"></span>
+  </div>
+</div>
+\n<h3>The borrowed version</h3><pre><code>line <span class="o">=</span> <span class="s">&quot;ORD-8101|a@shop.co|GB&quot;</span>
+
+<span class="f">print</span>(line.split(<span class="s">&quot;|&quot;</span>))
+<span class="f">print</span>(<span class="s">&quot;a b  c&quot;</span>.split())
+<span class="f">print</span>(<span class="s">&quot;ORD-8101|a@shop.co|GB&quot;</span>.split(<span class="s">&quot;|&quot;</span><span class="o">,</span> <span class="n">1</span>))</code></pre><div class="out">[&#x27;ORD-8101&#x27;, &#x27;a@shop.co&#x27;, &#x27;GB&#x27;]
+[&#x27;a&#x27;, &#x27;b&#x27;, &#x27;c&#x27;]
+[&#x27;ORD-8101&#x27;, &#x27;a@shop.co|GB&#x27;]</div>
+
+<p><code>split(sep)</code> does what you just wrote, returning a <strong>list</strong> of strings — which is why it waited for Chapter 4. Three behaviours worth knowing:</p>
+
+<ul>
+<li><strong>With no argument</strong>, it splits on any run of whitespace and discards empties — note <code>"a b  c"</code> giving three fields, not four. That is a different algorithm from splitting on a specific character, and it is usually what you want for human-typed text.</li>
+<li><strong>With a separator</strong>, empty fields are preserved. <code>"a||b".split("|")</code> gives <code>['a', '', 'b']</code> — the empty string in the middle is a real field that happened to be blank, and throwing it away would shift every column after it.</li>
+<li><strong>With a count</strong>, it stops after that many splits. Useful when the last field may legitimately contain the delimiter.</li>
+</ul>
+
+<p>The inverse is <code>join</code>, and its shape surprises everyone once — <strong>the separator is the string, and the sequence is the argument</strong>:</p><pre><code>fields <span class="o">=</span> [<span class="s">&quot;ORD-8101&quot;</span><span class="o">,</span> <span class="s">&quot;a@shop.co&quot;</span><span class="o">,</span> <span class="s">&quot;GB&quot;</span>]
+
+<span class="f">print</span>(<span class="s">&quot;|&quot;</span>.join(fields))
+<span class="f">print</span>(<span class="s">&quot;, &quot;</span>.join(fields))
+<span class="f">print</span>(<span class="s">&quot;&quot;</span>.join(fields))</code></pre><div class="out">ORD-8101|a@shop.co|GB
+ORD-8101, a@shop.co, GB
+ORD-8101a@shop.coGB</div>
+
+<p>Read <code>"|".join(fields)</code> as "put a pipe between each of these". It is written that way because the separator is what knows how to do the joining, and because it works with any sequence of strings. Every item must already <em>be</em> a string — <code>join</code> on a list of numbers raises <code>TypeError</code> rather than converting for you.</p>\n\n<h2>6. What is still coming</h2>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tool</th><th>What it adds</th><th>Where it lands</th></tr></thead>
+<tbody>
+<tr><td><code>open()</code>, <code>with</code></td><td>reading text from an actual file rather than a tuple of lines</td><td>Files chapter, next</td></tr>
+<tr><td><code>csv</code>, <code>json</code></td><td>parsers that already handle quoting, escaping and nesting</td><td>Files chapter — after you have split by hand</td></tr>
+<tr><td><code>re</code> — regular expressions</td><td>matching patterns rather than fixed delimiters</td><td>Its own chapter, once the manual version is understood</td></tr>
+<tr><td><code>try</code>/<code>except</code></td><td>handling <code>ValueError</code> from a bad <code>int()</code> instead of guarding with <code>isdigit()</code></td><td>Exceptions chapter</td></tr>
+<tr><td>encodings, UTF-8, <code>bytes</code></td><td>what a character actually is once text leaves English</td><td>With files and I/O</td></tr>
+<tr><td><code>str.format()</code>, <code>%</code></td><td>older formatting styles you will meet in existing code</td><td>Mentioned only — f-strings are the modern default</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>One of those is worth flagging now: **regular expressions exist, and they are not the answer yet.** Most parsing that reaches for a regex is better served by <code>split</code> and <code>strip</code>, and a regex written before you can do it by hand is a regex you cannot debug. It gets a chapter when the problems genuinely need it.</p>
+
+<h2>Worked examples</h2>
+
+<h3>Example 1 — A supplier feed that has been through several hands</h3>
+
+<p>Four lines of raw text. One has inconsistent spacing and lowercase, one is missing its price, one is out of stock. Turn what is usable into rows and report the rest.</p>
+
+<p>The reasoning first. Every line gets <code>strip()</code> then <code>split("|")</code> — and the field count is checked <strong>before</strong> anything is unpacked, because a short line would otherwise raise <code>IndexError</code> on a field that is not there. After that each field is stripped individually, because whitespace hides between delimiters as well as at the ends. Validation happens before conversion: <code>isdigit()</code> before <code>int()</code>, an emptiness check before <code>float()</code>. Every failure is a guard clause with <code>continue</code> — the shape from Chapter 3 §8 — so the successful path stays at one indent level.</p><pre><code>feed <span class="o">=</span> (
+    <span class="s">&quot;SKU-301|Blue Mug|12|4.99&quot;</span><span class="o">,</span>
+    <span class="s">&quot;  sku-302 | Red Mug |0| 5.49  &quot;</span><span class="o">,</span>
+    <span class="s">&quot;SKU-303|Green Mug|7|&quot;</span><span class="o">,</span>
+    <span class="s">&quot;SKU-304|Yellow Mug|3|6.25&quot;</span><span class="o">,</span>
+)
+
+stocked <span class="o">=</span> []
+problems <span class="o">=</span> []
+
+<span class="k">for</span> line <span class="k">in</span> feed<span class="o">:</span>
+    fields <span class="o">=</span> line.strip().split(<span class="s">&quot;|&quot;</span>)
+
+    <span class="k">if</span> <span class="f">len</span>(fields) <span class="o">!=</span> <span class="n">4</span><span class="o">:</span>
+        problems.append((line.strip()<span class="o">,</span> <span class="s">f&quot;expected 4 fields, found </span>{len(fields)}<span class="s">&quot;</span>))
+        <span class="k">continue</span>
+
+    sku <span class="o">=</span> fields[<span class="n">0</span>].strip().upper()
+    name <span class="o">=</span> fields[<span class="n">1</span>].strip()
+    raw_qty <span class="o">=</span> fields[<span class="n">2</span>].strip()
+    raw_price <span class="o">=</span> fields[<span class="n">3</span>].strip()
+
+    <span class="k">if</span> <span class="k">not</span> raw_qty.isdigit()<span class="o">:</span>
+        problems.append((sku<span class="o">,</span> <span class="s">&quot;quantity is not a number&quot;</span>))
+        <span class="k">continue</span>
+
+    <span class="k">if</span> raw_price <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="o">:</span>
+        problems.append((sku<span class="o">,</span> <span class="s">&quot;price is missing&quot;</span>))
+        <span class="k">continue</span>
+
+    qty <span class="o">=</span> <span class="f">int</span>(raw_qty)
+    price <span class="o">=</span> <span class="f">float</span>(raw_price)
+
+    <span class="k">if</span> qty <span class="o">==</span> <span class="n">0</span><span class="o">:</span>
+        problems.append((sku<span class="o">,</span> <span class="s">&quot;out of stock&quot;</span>))
+        <span class="k">continue</span>
+
+    stocked.append((sku<span class="o">,</span> name<span class="o">,</span> qty<span class="o">,</span> price))
+
+<span class="f">print</span>(<span class="s">f&quot;STOCKED (</span>{len(stocked)}<span class="s">)&quot;</span>)
+<span class="k">if</span> stocked<span class="o">:</span>
+    <span class="k">for</span> sku<span class="o">,</span> name<span class="o">,</span> qty<span class="o">,</span> price <span class="k">in</span> stocked<span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f&quot;  </span>{sku:&lt;10}{name:&lt;14}{qty:&gt;4}{price:&gt;8.2f}<span class="s">&quot;</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">&quot;  none&quot;</span>)
+
+<span class="f">print</span>(<span class="s">f&quot;PROBLEMS (</span>{len(problems)}<span class="s">)&quot;</span>)
+<span class="k">if</span> problems<span class="o">:</span>
+    <span class="k">for</span> what<span class="o">,</span> why <span class="k">in</span> problems<span class="o">:</span>
+        <span class="f">print</span>(<span class="s">f&quot;  </span>{what:&lt;10}{why}<span class="s">&quot;</span>)
+<span class="k">else</span><span class="o">:</span>
+    <span class="f">print</span>(<span class="s">&quot;  none&quot;</span>)</code></pre><div class="out">STOCKED (2)
+  SKU-301   Blue Mug        12    4.99
+  SKU-304   Yellow Mug       3    6.25
+PROBLEMS (2)
+  SKU-302   out of stock
+  SKU-303   price is missing</div>
+
+<p>Notice what <code>fields[0].strip().upper()</code> does in one line: two methods chained, each taking the result of the last. <code>"  sku-302 "</code> becomes <code>"sku-302"</code> becomes <code>"SKU-302"</code>. Chaining works because every string method returns a string, so the next method has something to act on — and it reads left to right in the order the operations happen.</p>
+
+<p>And note the order of the guards. <code>isdigit()</code> is checked before <code>int()</code> is ever called, so a malformed quantity produces a clear message instead of a crash. That is the same principle as Chapter 4's exercise 5 fix — <strong>convert only after you know the row is worth processing.</strong></p>
+
+<h3>Example 2 — Unpacking a line into named fields</h3>
+
+<p>Once a line is split, Chapter 3's unpacking does the rest — and the empty trailing field turns out to carry meaning.</p><pre><code>line <span class="o">=</span> <span class="s">&quot;ORD-8101|a@shop.co|GB|1240.00|3|GB|&quot;</span>
+
+fields <span class="o">=</span> line.split(<span class="s">&quot;|&quot;</span>)
+<span class="f">print</span>(<span class="f">len</span>(fields))
+<span class="f">print</span>(fields)
+
+order_id<span class="o">,</span> email<span class="o">,</span> dest<span class="o">,</span> raw_value<span class="o">,</span> raw_age<span class="o">,</span> billing<span class="o">,</span> phone <span class="o">=</span> fields
+<span class="f">print</span>(<span class="s">f&quot;[</span>{phone}<span class="s">]&quot;</span>)
+<span class="f">print</span>(phone <span class="o">==</span> <span class="s">&quot;&quot;</span>)
+
+<span class="k">if</span> phone <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="o">:</span>
+    phone <span class="o">=</span> <span class="k">None</span>
+
+<span class="f">print</span>(phone <span class="k">is</span> <span class="k">None</span>)</code></pre><div class="out">7
+[&#x27;ORD-8101&#x27;, &#x27;a@shop.co&#x27;, &#x27;GB&#x27;, &#x27;1240.00&#x27;, &#x27;3&#x27;, &#x27;GB&#x27;, &#x27;&#x27;]
+[]
+True
+True</div>
+
+<p><code>line.split("|")</code> on a line ending in <code>|</code> produces a final empty string, and that is correct rather than a bug: the field exists and is blank. The count is 7, which matches the seven names on the left of the assignment, so unpacking works — and if the line had six fields it would raise <code>ValueError: not enough values to unpack</code>, which is a far better failure than silently shifting every column.</p>
+
+<p>The last step converts the empty string to <code>None</code>, because <code>""</code> and <code>None</code> mean different things: <code>""</code> is "a phone field that is blank", <code>None</code> is "no phone number". Chapter 3 taught <code>None</code> as the sentinel for "nothing"; this is where raw text gets translated into it. Every exercise so far has been handed <code>None</code> already in place — now you can see who put it there.</p>\n\n<h2>What this chapter established</h2>
+
+<p>You can now take raw text and produce structured data. Concretely: a string as a sequence, with indexing, <code>len</code>, iteration and the substring behaviour of <code>in</code>; slicing, its exclusive end, and its forgiveness where indexing is strict; immutability, and the rule connecting it to what a method returns; <code>strip</code>, case conversion, <code>startswith</code>, <code>isdigit</code>, <code>find</code> and its <code>-1</code>, <code>count</code> and <code>replace</code>; a delimiter split written by hand, including the final field the loop cannot reach, and then <code>split</code> and <code>join</code>; method chaining; and validating before converting.</p>
+
+<p>Every exercise in this chapter starts from text. Nothing arrives pre-split, and several lines are wrong in ways the sample data will not show you.</p>
+
+<nav class="chapter-foot">
+  <a href="../chapter_04_keeping/content.html" class="prv"><span class="dir">Previous</span>&larr; Chapter 4</a>
+  <a href="exercises.html" class="nxt"><span class="dir">Next</span>Exercises &rarr;</a>
+</nav>
+
+</main>
+
+<script>
+(function () {
+  var LINE = "ORD-8101|a@shop.co|GB";
+  var frames = [];
+  (function trace() {
+    var fields = [], start = 0;
+    function snap(i, note) {
+      frames.push({i: i, start: start, fields: fields.slice(), note: note});
+    }
+    snap(-1, "field_start = 0. Nothing collected yet.");
+    for (var i = 0; i < LINE.length; i++) {
+      if (LINE[i] === "|") {
+        fields.push(LINE.slice(start, i));
+        snap(i, "Delimiter at " + i + ". line[" + start + ":" + i + "] is a complete field \u2014 collect it, then move field_start to " + (i + 1) + ".");
+        start = i + 1;
+      } else {
+        snap(i, "'" + LINE[i] + "' is not a delimiter. Keep going; field_start stays at " + start + ".");
+      }
+    }
+    fields.push(LINE.slice(start));
+    snap(-1, "Loop over. The last field has no delimiter after it, so line[" + start + ":] finishes the job. Omit this and every row silently loses its final field.");
+  })();
+
+  var step = 0;
+  var chars = document.getElementById("splitChars");
+  var state = document.getElementById("splitState");
+
+  function render() {
+    var f = frames[step];
+    chars.innerHTML = "";
+    for (var k = 0; k < LINE.length; k++) {
+      var d = document.createElement("div");
+      var bg = "transparent", w = "400";
+      if (k === f.i) { bg = "rgba(200,140,0,.30)"; w = "700"; }
+      else if (k >= f.start && f.i >= 0 && k < f.i) { bg = "rgba(60,120,220,.16)"; }
+      d.setAttribute("style",
+        "min-width:20px;padding:6px 3px;text-align:center;border:1px solid currentColor;" +
+        "border-radius:3px;font-family:ui-monospace,monospace;font-size:.8rem;background:" + bg +
+        ";font-weight:" + w);
+      d.innerHTML = (LINE[k] === " " ? "&nbsp;" : LINE[k]) +
+        "<div style='font-size:.62em;opacity:.5;font-weight:400'>" + k + "</div>";
+      chars.appendChild(d);
+    }
+    var quoted = [];
+    for (var j = 0; j < f.fields.length; j++) { quoted.push("'" + f.fields[j] + "'"); }
+    state.innerHTML =
+      "<div>field_start = " + f.start + (f.i >= 0 ? "&nbsp;&nbsp;\u00b7&nbsp;&nbsp;i = " + f.i : "") + "</div>" +
+      "<div>fields = [" + quoted.join(", ") + "]</div>" +
+      "<div style='opacity:.75'>" + f.note + "</div>";
+    document.getElementById("splitCount").textContent = "step " + (step + 1) + " of " + frames.length;
+  }
+
+  document.getElementById("splitStep").onclick = function () {
+    if (step < frames.length - 1) { step += 1; render(); }
+  };
+  document.getElementById("splitRun").onclick = function () { step = frames.length - 1; render(); };
+  document.getElementById("splitReset").onclick = function () { step = 0; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

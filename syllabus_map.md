@@ -4,7 +4,7 @@ Running index of every concept, function, and structure **formally taught** so f
 If something feels unfamiliar during an exercise and it is not listed here, that is
 a syllabus gap, not a personal one — flag it.
 
-Last updated: after the Chapter 4 review. Ch.1 §9 extended 2026-09-02 — of 80
+Last updated: after Chapter 5 was written. Ch.1 §9 extended 2026-09-02 — of 80
 f-strings across four chapters, 75 sat inside `print()` and exactly one appeared
 elsewhere, so the material implicitly taught that f-strings are a printing tool. §9 extended 2026-08-31 — both `zip`
 examples used flat scalar sequences, while Ex.4 needs `zip` over rows; the
@@ -219,6 +219,39 @@ repetition and literals-in-braces added after gaps were flagged in the Ch.1 revi
 
 ---
 
+### Chapter 5 — Reading What Arrives
+
+**Strings as sequences**
+- Indexing, negative indexing, `len`, iteration — as for tuples and lists
+- `in` means **substring** on a string, **membership** on a collection
+
+**Slicing**
+- `s[a:b]`, `s[:b]`, `s[a:]`, negative positions; exclusive end
+- `s[:n] + s[n:] == s`; slicing never raises `IndexError` where indexing does
+- Works on tuples and lists too — `sorted(x, reverse=True)[:3]` for a top-N
+
+**Immutability**
+- `s[0] = "X"` raises `TypeError`, exactly as a tuple does
+- Methods return new strings and change nothing; not assigning loses the work
+- The rule: mutable methods change and return `None`; immutable ones return a value
+
+**Methods**
+- `.strip()`, `.lstrip()`, `.rstrip()`, with and without an argument
+- `.upper()`, `.lower()`, and normalising before comparing
+- `.startswith()`, `.endswith()`, `.isdigit()` — and empty string is not a digit
+- `.find()` returning `-1`, which is a valid index and therefore a trap
+- `.count()`, `.replace()`
+- Method chaining, since every string method returns a string
+
+**Splitting and joining**
+- A delimiter split written by hand, including the final field no delimiter completes
+- `.split(sep)`, `.split()` on whitespace, `.split(sep, count)`
+- Empty fields preserved with a separator, discarded without one
+- `"|".join(seq)` — the separator is the string, the sequence is the argument
+- Validating before converting: `isdigit()` before `int()`
+
+---
+
 ---
 
 ## Known siblings, deliberately deferred
@@ -232,7 +265,7 @@ These exist, are real, and are coming — they are not gaps.
 | Multi-way dispatch | `match` statement (3.10+) | After data structures |
 | ~~Membership of several options~~ | ~~`x in (a, b, c)`~~ | **Taught in Chapter 3** |
 | Float comparison | `math.isclose()` | Modules chapter |
-| String methods | `.strip()`, `.split()`, `.upper()`, `.replace()`, indexing, slicing | Strings chapter |
+| ~~String methods~~ | ~~`.strip()`, `.split()`, `.upper()`, `.replace()`, indexing, slicing~~ | **Taught in Chapter 5** |
 | Functions | `def`, parameters, `return`, scope | Functions chapter |
 | Older string formatting | `%` formatting, `str.format()` | Mentioned when f-strings are revisited; f-strings are the modern default |
 | ~~Multiple assignment~~ | ~~`a, b = 1, 2`~~ | **Taught in Chapter 3** — the Ch.2 gap is closed |
@@ -245,8 +278,11 @@ These exist, are real, and are coming — they are not gaps.
 | Loop with no `break` | `for … else` | Mentioned with searching |
 | Lookup by key | `dict` | Dictionaries chapter, next — the right answer to "count how many of each", flagged in Ch.4 §10 |
 | Input | `input()` | Deferred — exercises use fixed values so grading stays deterministic |
+| Searching backwards | `.rfind()`, `.rindex()`, `.rsplit()`, `.partition()` | Withheld — Ch.5 Ex.4 exists to derive the backwards scan by hand |
+| Pattern matching | `re` — regular expressions | Own chapter, after manual parsing is understood |
+| Reading real files | `open()`, `with`, `csv`, `json`, encodings | Files chapter, next |
 | Sorting by a rule | `sorted(x, key=...)`, `.sort(key=...)` | Functions chapter, once `def` exists — Ch.4 sorts by rebuilding tuples instead |
-| Taking a section | slicing `x[1:3]` | Strings chapter |
+| ~~Taking a section~~ | ~~slicing `x[1:3]`~~ | **Taught in Chapter 5** |
 | Top N cheaply | `heapq` | Sorting and algorithms |
 
 ---
