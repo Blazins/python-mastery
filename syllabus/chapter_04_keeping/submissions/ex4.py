@@ -35,14 +35,15 @@ for expect, count in zip(expected,counted):
             net += difference
     else:
         print("Non matching rows")
+        print(f"{expect_sku} does not match {count_sku}")
 
 for sku, difference in discrepancies:
     if difference > 0:
         over_count += 1
-        print(f"  {sku:<10}{difference:>+5}")
     else:
         short_count += 1
-        print(f"  {sku:<10}{difference:>+5}")
+
+    print(f"  {sku:<10}{difference:>+5}")
 
 if not discrepancies:
     print("  none")
