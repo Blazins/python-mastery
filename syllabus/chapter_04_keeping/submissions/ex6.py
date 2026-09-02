@@ -35,9 +35,9 @@ for order_id, email, dest, value, account_age_days, billing_country, phone in or
     else:
         float_value = float(value)
         risk_score = 0
-        if account_age_days <= 7:
+        if account_age_days < 7:
             risk_score += 30
-        if float_value >= 1000.00:
+        if float_value > 1000.00:
             risk_score += 25
         if billing_country != dest:
             risk_score += 20
