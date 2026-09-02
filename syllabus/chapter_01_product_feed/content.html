@@ -399,6 +399,25 @@ ababab</div>
   <p>An <span class="term">f-string</span> is a string literal prefixed with the letter <code>f</code>, in which any expression written between braces <code>{</code> and <code>}</code> is evaluated and its result inserted into the text. It is the standard, idiomatic way to build text from values in modern Python.</p>
 </div>
 
+<div class="aside">
+  <span class="label">An f-string is not a printing tool</span>
+  Every f-string you will meet in the next few chapters sits inside <code>print()</code>, and it is worth saying plainly that this is habit rather than rule. <strong>An f-string is an expression that produces a <code>str</code></strong> — exactly like <code>"a" + "b"</code> does — and <code>print()</code> is simply the commonest thing to do with one. You can bind it to a name, keep it for later, put it in a list, or build it long before anything is displayed.
+</div>
+
+<p>The distinction matters more than it sounds, because it decides <em>when</em> you assemble a message:</p>
+
+<pre><code>country <span class="o">=</span> <span class="s">&quot;DE&quot;</span>
+
+reason <span class="o">=</span> <span class="s">f&quot;we do not ship to </span>{country}<span class="s">&quot;</span>
+
+<span class="f">print</span>(reason)
+<span class="f">print</span>(<span class="f">len</span>(reason))</code></pre><div class="out">we do not ship to DE
+20</div>
+
+<p><code>reason</code> is an ordinary string. It can be measured, compared, stored alongside other values, or passed anywhere a string is accepted — and it was built at the moment the facts were known, not at the moment something needed displaying.</p>
+
+<p>That has a real design consequence you will meet later. If you keep a fragment (<code>"we do not ship to"</code>) and carry the country separately so you can reassemble the sentence at print time, you are storing two things where one would do — and every place that handles those records has to know about both. Build the whole sentence when you know it, and the record has one field instead of two.</p>
+
 <pre><code>name <span class="o">=</span> <span class="s">"Blue Mug"</span>
 cost <span class="o">=</span> <span class="n">4.35</span>
 qty  <span class="o">=</span> <span class="n">3</span>
