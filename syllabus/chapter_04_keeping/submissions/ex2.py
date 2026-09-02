@@ -15,24 +15,22 @@ if picks:
 
     reorder_aisle = []
     aisles = []
+    distinct_aisles = []
 
     for sku, aisle, shelf in picks:
         reorder_aisle.append((aisle, shelf, sku))
-        aisles.append((aisle))
+        aisles.append(aisle)
 
     reorder_aisle.sort()
     distinct_aisle_count = 0
 
-    for i in range(len(aisles)):
-        for j in range(i+1, len(aisles)):
-            if aisles[i] == aisles[j]:
-                 distinct_aisle_count += 1
+    for aisle in aisles:
+        if aisle not in distinct_aisles:
+            distinct_aisles.append(aisle)
+            distinct_aisle_count += 1
 
-
-    i = 0
-    for aisle, shelf, sku in reorder_aisle:
-        i += 1
-        print(f"{i:<6}{aisle:>5}{shelf:>7}   {sku}")
+    for n,(aisle, shelf, sku) in enumerate(reorder_aisle, start = 1):
+        print(f"{n:<6}{aisle:>5}{shelf:>7}   {sku}")
 
     print("-" * 34)
     print(f"{len(picks)} stops across {distinct_aisle_count} aisles")
