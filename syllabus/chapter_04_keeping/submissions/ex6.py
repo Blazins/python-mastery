@@ -10,8 +10,8 @@ orders = (
     ("ORD-8107", "g@shop.co", "IE",   "45.00", 200, "IE", "07700900999"),
 )
 
-email_rejected = []
-dest_rejected = []
+rejected = []
+rejected = []
 rejected_count = 0
 held_count = 0
 review_count = 0
@@ -25,11 +25,11 @@ total_dispatched = 0.00
 for order_id, email, dest, value, account_age_days, billing_country, phone in orders:
     if "@" not in email:
         reason = "email address is not valid"
-        email_rejected.append((order_id, reason))
+        rejected.append((order_id, reason))
         rejected_count += 1
     elif dest not in ALLOWED:
-        reason = "we do not ship to"
-        dest_rejected.append((order_id, dest, reason))
+        reason = f"we do not ship to {dest}"
+        rejected.append((order_id, reason))
         rejected_count += 1
 
     else:
@@ -74,12 +74,10 @@ else:
     print("  none")
 
 print("REJECTED")
-if email_rejected or dest_rejected:
-    for order_id, reason in sorted(email_rejected):
+if rejected:
+    for order_id, reason in rejected:
         print(f"  {order_id}  {reason}")
 
-    for order_id, dest, reason in sorted(dest_rejected):
-        print(f"  {order_id}  {reason} {dest}")
 else:
     print("  none")
 
