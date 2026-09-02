@@ -14,15 +14,14 @@ if requests:
     SLOW = 500
 
     slow_requests = []
-    fast_requests = []
     total_duration = 0.0
+    fast_requests = []
 
     for endpoint, duration in requests:
         if duration >= SLOW:
             slow_requests.append((endpoint, duration))
-        else:
-            fast_requests.append(duration)
         total_duration += duration
+        fast_requests.append(duration)
 
     sorted_fast_requests = sorted(fast_requests)
     slow_requests.sort(reverse=True)
