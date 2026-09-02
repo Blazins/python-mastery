@@ -25,6 +25,7 @@ for sku in unique_skus:
     for i in range(len(feed)):
         if feed[i] == sku:
             first_position.append((i, sku))
+            break
 
 
 if repeated_skus:
