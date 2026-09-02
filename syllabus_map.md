@@ -4,7 +4,9 @@ Running index of every concept, function, and structure **formally taught** so f
 If something feels unfamiliar during an exercise and it is not listed here, that is
 a syllabus gap, not a personal one — flag it.
 
-Last updated: after Chapter 4 was written. §9 extended 2026-08-31 — both `zip`
+Last updated: after the Chapter 4 review. Ch.1 §9 extended 2026-09-02 — of 80
+f-strings across four chapters, 75 sat inside `print()` and exactly one appeared
+elsewhere, so the material implicitly taught that f-strings are a printing tool. §9 extended 2026-08-31 — both `zip`
 examples used flat scalar sequences, while Ex.4 needs `zip` over rows; the
 two-step unpacking appeared only once, inside an unrelated worked example. Chapter 3 §9 expanded 2026-08-27 —
 index-based nested loops were required by Ex.3 but never taught; see review.
@@ -62,6 +64,10 @@ repetition and literals-in-braces added after gaps were flagged in the Ch.1 revi
 - `*` repetition: `"-" * n`; count may be a name or expression; `0`/negative gives
   `""`; `str * str` is a `TypeError`
 - f-strings: `f"…{expression}…"`
+- An f-string is an **expression producing a `str`**, not a printing feature —
+  it can be assigned, stored, measured and passed around. Build the whole
+  sentence when the facts are known, rather than storing a fragment plus its
+  data and reassembling at print time
 - Literals inside the braces: `f"{'PRODUCT':<20}"`; quote nesting (single inside
   double); padding the *label* to a fixed width instead of retuning the number's
 - Format specifiers: `.2f`, `.0f`, `,`, `,.2f`, `>n`, `<n`, `^n` (centre), `.1%`
