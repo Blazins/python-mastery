@@ -81,9 +81,35 @@ actually asks for.
 | 28 | Concurrency — threads, `asyncio`, async I/O | 4 | Named explicitly in a reported interview question |
 | 29 | HTTP and APIs — consuming and serving | 3 | "REST and gRPC API experience" |
 | 30 | Databases — SQL and `sqlite3` | 2 | "SQL and NoSQL data store expertise" |
+| 30b | **Python and the system** — `subprocess`, `pathlib`, permissions, processes, environment, exit codes | 3 | **New, 2026-09-03.** Linux appears in nearly every reported technical round: *permissions, shell commands, processes, services, links, containers, troubleshooting* |
 | 31 | Capstone — multi-module CLI, typed, tested, packaged | 5 | The portfolio artifact and the written-interview material |
 
 ---
+
+## Priority correction — 2026-09-03
+
+520 aggregated candidate reports establish that **the written interview, the
+psychometric tests and the timed technical assessment are the main gate**, and
+that most rejections happen before any human conversation. Topic prominence
+across reported loops: Python 96%, **Written Assessments 94%**, problem solving
+82%, GIA 75%, psychometric 72%, aptitude 70%.
+
+The chapters below are gate four. **Three things now run in parallel with them,
+starting immediately, because they are cheap and they are where candidates are
+actually eliminated:**
+
+1. **The written-interview file.** Add to it monthly rather than writing 10–20
+   pages in one sitting. Motivation, projects and the decisions inside them,
+   open-source philosophy, education history, STAR examples.
+2. **Timed browser coding, no IDE.** Short sessions, increasing in frequency
+   near application time. The DevSkiller assessment is reported at **1h 25m**,
+   and at least one loop had a **separate Python take-home** as well.
+3. **GIA practice.** Timed, speed-sensitive, and practisable. Cheap to improve.
+
+**Linux fluency is a fourth parallel track**, and mostly not a Python-syllabus
+topic. Chapter 30b covers the Python-facing half; the shell half — permissions,
+processes, services, symlinks, systemd, troubleshooting — is daily practice on a
+machine he already runs, not a chapter.
 
 ## Assessment
 
