@@ -113,6 +113,104 @@ machine he already runs, not a chapter.
 
 ## Assessment
 
+**Exams every 4 chapters, starting immediately after Chapter 5.** Seven across
+the plan: after chapters **5**, 9, 13, 17, 21, 25 and 29. Two hours, closed
+book, browser editor or `micro` with no reference material — the DevSkiller
+format. Frequent low-stakes retrieval beats infrequent high-stakes examination
+for retention, and a bad result costs less to repair when each exam covers less.
+
+**Exam 1 comes first, and it is overdue.** Chapters 1–5 are complete and none
+has been examined. Three reasons it should not wait for Chapter 9:
+
+1. **There is no closed-book data at all.** Every assessment so far has been
+   open book, unlimited time, with a diagnostician available. Everything
+   believed about ability is measured under conditions that will not exist in a
+   real technical assessment.
+2. **Retention across Chapters 1–3 is untested** and those chapters are weeks
+   old. Two `weak_spots.md` entries have clearing conditions that explicitly
+   require re-testing, and the Ex.5 cold redo is already logged as pending. One
+   exam subsumes all of it.
+3. **Sitting a timed closed-book exam is itself a skill** — pacing, not freezing
+   on a blank editor, choosing what to attempt first. Learn it on material
+   already known, not on generators and asyncio.
+
+Chapters 1–5 are a coherent boundary in their own right: everything needed to
+**parse, transform and report on data** without dictionaries, functions or
+classes.
+
+**Three take-home projects**, five days each, after roughly chapters 15, 21 and
+31.
+
+### What a take-home is for
+
+**Testing integration, first and only.** Portfolio value is a welcome
+by-product, not the objective. These are not attempts at a real open-source tool
+— a genuinely-used tool is friction-driven, long-horizon and usually
+collaborative, and pretending a five-day exercise can be one produces exactly
+the pet project this is meant to avoid.
+
+### The standard — pet projects versus finished work
+
+**A pet project is an unfinished sketch of an ambitious idea. The opposite is not
+a bigger idea; it is a smaller idea, finished to production standard.**
+
+A todo app fails as portfolio evidence not because the subject is trivial, but
+because it is a demo — no tests, no packaging, no error handling, a README
+saying `run python main.py`. A *small* tool that is genuinely finished is rare,
+and rarity is what gets noticed.
+
+Canonical states the rubric themselves: *"a great product is more than code —
+it is ready for the unexpected, it is well documented, it is comprehensively
+tested, it is tastefully presented in its CLI."*
+
+### Delivery requirements — every take-home, regardless of subject
+
+| | Requirement |
+|---|---|
+| **Form** | A **CLI tool**. Canonical's Python is CLI-shaped — snapcraft is a command-line tool. Not a web app |
+| **Install** | `pip install .` then a working command. One step, no instructions beyond it |
+| **Input** | Real, messy input — text, config, logs. Never a hand-tidied fixture |
+| **Failure** | Every failure mode handled and reported usefully. Non-zero exit codes. Nothing crashes with a traceback |
+| **Tests** | pytest, meaningful cases, including the branches the sample data never reaches |
+| **Types** | Annotated throughout; `mypy` clean (from Ch.22) |
+| **Structure** | Multi-module with a real package layout. Not one file |
+| **Docs** | README: what problem, how to install, how to run, worked example, and **scope — what it deliberately does not do** |
+| **Decisions** | A section stating what was chosen, what was rejected, why, and **what would change the answer at ten thousand times the input**. Three independent sources name this as the deciding interview signal |
+| **History** | Real incremental commits with messages that explain why. The repository is evidence too |
+
+### Choosing subjects
+
+Deferred, deliberately. Each take-home's subject is picked when its chapters are
+done — informed by what has actually been taught and by the **friction log**
+(see below). Choosing now would mean designing an exercise for skills that do
+not yet exist.
+
+Shape by stage, as a guide rather than a specification:
+
+- **After ~Ch.15** — parse messy real input, validate it, report. Multi-module,
+  tested, packaged. Core language integration.
+- **After ~Ch.21** — something with streaming or large input where the
+  algorithm and its cost actually matter.
+- **After Ch.31** — the full instrument: packaged CLI, typed, tested, logged,
+  configurable, concurrent where warranted, talking to something over HTTP.
+
+### The friction log — separate, and long-horizon
+
+Not a take-home. A running file, one dated line each time something in daily
+work is awkward, unclear, needs a workaround, or prompts *"why isn't there a
+tool for this"* — in Ubuntu, in Python tooling, in packaging, anywhere.
+
+By Chapter 20 it holds dozens of entries and three to five are real candidates.
+This is how usable tools actually get found; almost none are brainstormed. The
+open-source contributions are the other half of the reconnaissance — working
+inside `cloud-init` or `snapcraft` shows where the gaps are and what users
+complain about, which cannot be seen from outside.
+
+If a take-home subject and a friction-log entry happen to coincide, take it.
+Do not force it.
+
+
+
 Two formats, because **Canonical uses both** and they test different things.
 
 - **Timed closed-book exam, ~2 hours, four of them** (after chapters 11, 17, 21,
