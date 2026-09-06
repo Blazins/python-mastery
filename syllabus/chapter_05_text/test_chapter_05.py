@@ -262,21 +262,21 @@ EX3_EXPECTED = [
     "2. Grace Hopper        grace@shop.co",
     "3. Alan Turing         alan@shop.co",
     "4. Katherine Johnson   katherine@shop.co",
-    "REJECTED",
+    "DUPLICATES",
     "  line 2: ada lovelace already signed up as ada@shop.co",
     "  line 4: Grace Hopper already signed up as grace@shop.co",
     "----------------------------------------------",
-    "6 signups   4 unique   2 duplicate   0 malformed"
+    "6 signups   4 unique   2 duplicate"
 ]
 
 EX3_MUTATED = [
     "KEPT (2)",
     "1. Ada Lovelace        ada@shop.co",
     "2. Grace Hopper        grace@shop.co",
-    "REJECTED",
-    "  line 2: Alan Turing no-brackets-here \u2014 no email found",
+    "DUPLICATES",
+    "  line 2: Alan Turing no-brackets-here \u2014 malformed",
     "----------------------------------------------",
-    "3 signups   2 unique   0 duplicate   1 malformed"
+    "3 signups   2 unique   1 duplicate"
 ]
 
 EX3_EDITS = [

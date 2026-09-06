@@ -171,17 +171,20 @@ An email is the identity: two entries are the same person if their emails match
 first occurrence of each, in arrival order, numbered from 1 with the name left in
 20 followed by the normalised email.
 
-**The `REJECTED` section lists two different kinds of failure**, duplicates
-first, then malformed lines, each with **the line number it appeared on**,
-counting from zero:
+Report every duplicate with **the line number it appeared on**, counting from
+zero, the name as written on that line, and the email it collided with:
 
-- **A duplicate** — the name as written on that line, then the email it collided
-  with: `  line 2: ada lovelace already signed up as ada@shop.co`
-- **A malformed line**, meaning no angle brackets were found — the whole
-  stripped entry, then the reason:
-  `  line 2: Alan Turing no-brackets-here — no email found`
+```
+  line 2: ada lovelace already signed up as ada@shop.co
+```
 
-They are counted **separately**. A malformed line is not a duplicate.
+A line with no angle brackets is **malformed** — no email can be extracted from
+it. Report it in the same section and count it the same way, but with its own
+sentence, since "already signed up as" would make no sense:
+
+```
+  line 2: Alan Turing no-brackets-here — malformed
+```
 
 ```
 KEPT (4)
@@ -189,16 +192,15 @@ KEPT (4)
 2. Grace Hopper        grace@shop.co
 3. Alan Turing         alan@shop.co
 4. Katherine Johnson   katherine@shop.co
-REJECTED
+DUPLICATES
   line 2: ada lovelace already signed up as ada@shop.co
   line 4: Grace Hopper already signed up as grace@shop.co
 ----------------------------------------------
-6 signups   4 unique   2 duplicate   0 malformed
+6 signups   4 unique   2 duplicate
 ```
 
-The rule is 46 hyphens, and `REJECTED` prints `  none` only when there are
-**neither** duplicates nor malformed lines. The closing line reports signups,
-unique, duplicate and malformed counts.
+The rule is 46 hyphens, and the duplicates section prints `  none` when there
+are none.
 
 ---
 
