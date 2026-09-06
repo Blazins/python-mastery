@@ -131,9 +131,22 @@ BY LEVEL
 6 lines   3 levels   2 error
 ```
 
-The rule is 40 hyphens. Print `  none` when no entry matches. Note that `LEVEL`
-is a value to read, not a string to write into the logic — the grader changes it,
-and it changes the level counts too.
+The rule is 40 hyphens.
+
+**The two sections are independent.** The `{LEVEL} ENTRIES` section prints
+`  none` when nothing matches the target level. **`BY LEVEL` has no such case** —
+it is a census of the log, listing every level that appears, in first-appearance
+order, regardless of what `LEVEL` is set to. It would be identical if `LEVEL`
+were `"BANANA"`.
+
+Columns for `BY LEVEL`: two leading spaces, the level left-aligned in 6, the
+count right-aligned in 3.
+
+Note that `LEVEL` is a value to read, not a string to write into the logic — the
+grader changes it, and it changes the level counts too. Note also that in the
+sample data the target level happens to be the last row of `BY LEVEL`. **That is
+a coincidence of first-appearance order, not a rule**, and the mutated dataset
+breaks it.
 
 ---
 
