@@ -171,20 +171,30 @@ An email is the identity: two entries are the same person if their emails match
 first occurrence of each, in arrival order, numbered from 1 with the name left in
 20 followed by the normalised email.
 
-Report every duplicate with **the line number it appeared on**, counting from
-zero, the name as written on that line, and the email it collided with:
+### The `REJECTED` section — two kinds of failure, listed and counted separately
+
+A line can fail for two different reasons, and they are **not the same thing**.
+Duplicates are listed first, then malformed lines. Both carry **the line number
+they appeared on**, counting from zero.
+
+**A duplicate** — this email has already been seen. Give the name as written on
+*this* line, and the email it collided with:
 
 ```
   line 2: ada lovelace already signed up as ada@shop.co
 ```
 
-A line with no angle brackets is **malformed** — no email can be extracted from
-it. Report it in the same section and count it the same way, but with its own
-sentence, since "already signed up as" would make no sense:
+**A malformed line** — no angle brackets, so no email can be extracted. It is
+not a signup and it is **not a duplicate**. Give the whole stripped entry and
+the reason:
 
 ```
   line 2: Alan Turing no-brackets-here — malformed
 ```
+
+**They are counted separately in the closing line**, which reports four numbers:
+signups, unique, duplicate, malformed. A malformed line never increments the
+duplicate count.
 
 ```
 KEPT (4)
@@ -192,15 +202,15 @@ KEPT (4)
 2. Grace Hopper        grace@shop.co
 3. Alan Turing         alan@shop.co
 4. Katherine Johnson   katherine@shop.co
-DUPLICATES
+REJECTED
   line 2: ada lovelace already signed up as ada@shop.co
   line 4: Grace Hopper already signed up as grace@shop.co
 ----------------------------------------------
-6 signups   4 unique   2 duplicate
+6 signups   4 unique   2 duplicate   0 malformed
 ```
 
-The rule is 46 hyphens, and the duplicates section prints `  none` when there
-are none.
+The rule is 46 hyphens. `REJECTED` prints `  none` **only when there are
+neither duplicates nor malformed lines** — never alongside an entry.
 
 ---
 
