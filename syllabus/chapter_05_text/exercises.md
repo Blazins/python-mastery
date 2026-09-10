@@ -297,6 +297,11 @@ WIDTHS
 The rule is 40 hyphens. The closing line reports lines, columns, and the total
 number of characters across all lines.
 
+**A "line" here is one joined string** — the header plus one per row, so four in
+this data. The character count is the sum of their lengths: **delimiters count**,
+because they are characters in the string, while the two-space indent added when
+printing does **not**, since it is presentation rather than data.
+
 ---
 
 ## Exercise 6 — The pipeline, from raw text
