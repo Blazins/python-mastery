@@ -231,15 +231,19 @@ be tricked similarly. A tool that deletes therefore needs: dry-run by default,
 explicit confirmation, inode-sharing detection, permission errors handled
 mid-walk, symlink loops refused, and files that change during the scan survived.
 
-**It maps onto eight remaining chapters** — dictionaries (6), files (12),
+**It would map onto eight remaining chapters** — dictionaries (6), files (12),
 generators (18), complexity (21), CLI (25), logging (26), packaging (27), and
-system work (30b) — which is what makes it a capstone rather than a side project.
+system work (30b) — which is the useful part of the example regardless of
+whether this particular subject is ever built. **That mapping is the test of any
+candidate subject:** how many of the chapters actually taught does it force you
+to use, and can it therefore only be attempted late?
 
 **Honest limitation:** the space is saturated (`fdupes`, `jdupes`, `rdfind`,
-`rmlint`, `dupd`), so forks and stars are unlikely. By the stated purpose of a
-take-home — testing integration, with portfolio value as a by-product — that
-does not matter. It came from a topic rather than from friction, which is
-correct for a capstone and would not be for a tool intended to find real users.
+`rmlint`, `dupd`), so forks and stars are unlikely. Against a take-home's stated
+purpose — testing integration, with portfolio value as a by-product — that does
+not disqualify it. It came from reading a topic rather than from encountering
+friction, which is fine for an exercise and is not how a tool that finds real
+users gets found.
 
 ### The friction log — separate, and long-horizon
 
