@@ -194,10 +194,17 @@ Shape by stage, as a guide rather than a specification:
 - **After Ch.31** — the full instrument: packaged CLI, typed, tested, logged,
   configurable, concurrent where warranted, talking to something over HTTP.
 
-### Capstone candidate — a file-level deduplication tool
+### One idea in the pond — file-level deduplication
 
-Proposed 2026-09-11. Held as the leading candidate for the Chapter 31 capstone;
-not committed to, and not to be started before its chapters exist.
+Raised 2026-09-11 as a suggestion, not a proposal. **Nothing is committed to
+here**, and subjects stay deferred until their chapters exist (see above).
+Recorded only because the reasoning behind it is worth keeping, and because it
+is a useful worked example of what a take-home subject can look like.
+
+Scale is open too: it could be a small version that stops well short of hashing,
+or a larger one aimed at the known shortcomings of existing tools. The purpose
+of a take-home is testing integration — the size follows from which chapters
+it has to exercise, not from ambition.
 
 **Scope: file-level, not block-level.** The enterprise description (chunk,
 hash each chunk, replace chunks with references) is ZFS/btrfs/VDO territory,
