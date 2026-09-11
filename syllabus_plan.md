@@ -194,6 +194,57 @@ Shape by stage, as a guide rather than a specification:
 - **After Ch.31** — the full instrument: packaged CLI, typed, tested, logged,
   configurable, concurrent where warranted, talking to something over HTTP.
 
+### One idea in the pond — file-level deduplication
+
+Raised 2026-09-11 as a suggestion, not a proposal. **Nothing is committed to
+here**, and subjects stay deferred until their chapters exist (see above).
+Recorded only because the reasoning behind it is worth keeping, and because it
+is a useful worked example of what a take-home subject can look like.
+
+Scale is open too: it could be a small version that stops well short of hashing,
+or a larger one aimed at the known shortcomings of existing tools. The purpose
+of a take-home is testing integration — the size follows from which chapters
+it has to exercise, not from ambition.
+
+**Scope: file-level, not block-level.** The enterprise description (chunk,
+hash each chunk, replace chunks with references) is ZFS/btrfs/VDO territory,
+requiring filesystem reflink support. The achievable and genuinely useful version
+finds files whose *entire contents* match and replaces duplicates with hardlinks,
+or simply reports them.
+
+**Why it earns its place.** The naive approach — hash every file — is unusably
+slow, and the correct approach is a funnel every real tool uses:
+
+1. group by **size** — free, eliminates almost everything
+2. compare the **first N bytes** — cheap, eliminates most of the remainder
+3. **full hash or byte comparison** — expensive, only for survivors
+
+That is complexity thinking deciding whether the tool works at all, not an
+academic exercise.
+
+**The correctness traps are the real content.** `rmlint` ships a page titled
+*"Cautions (or why it's hard to write a dupefinder)"*. In the wild, `fdupes` can
+delete files incorrectly when hardlinks are involved — hardlinked files share an
+inode, so they are *already* one copy, and "deduplicating" them frees nothing
+while potentially destroying the last path to the data. `rdfind` and `dupd` can
+be tricked similarly. A tool that deletes therefore needs: dry-run by default,
+explicit confirmation, inode-sharing detection, permission errors handled
+mid-walk, symlink loops refused, and files that change during the scan survived.
+
+**It would map onto eight remaining chapters** — dictionaries (6), files (12),
+generators (18), complexity (21), CLI (25), logging (26), packaging (27), and
+system work (30b) — which is the useful part of the example regardless of
+whether this particular subject is ever built. **That mapping is the test of any
+candidate subject:** how many of the chapters actually taught does it force you
+to use, and can it therefore only be attempted late?
+
+**Honest limitation:** the space is saturated (`fdupes`, `jdupes`, `rdfind`,
+`rmlint`, `dupd`), so forks and stars are unlikely. Against a take-home's stated
+purpose — testing integration, with portfolio value as a by-product — that does
+not disqualify it. It came from reading a topic rather than from encountering
+friction, which is fine for an exercise and is not how a tool that finds real
+users gets found.
+
 ### The friction log — separate, and long-horizon
 
 Not a take-home. A running file, one dated line each time something in daily

@@ -131,9 +131,22 @@ BY LEVEL
 6 lines   3 levels   2 error
 ```
 
-The rule is 40 hyphens. Print `  none` when no entry matches. Note that `LEVEL`
-is a value to read, not a string to write into the logic — the grader changes it,
-and it changes the level counts too.
+The rule is 40 hyphens.
+
+**The two sections are independent.** The `{LEVEL} ENTRIES` section prints
+`  none` when nothing matches the target level. **`BY LEVEL` has no such case** —
+it is a census of the log, listing every level that appears, in first-appearance
+order, regardless of what `LEVEL` is set to. It would be identical if `LEVEL`
+were `"BANANA"`.
+
+Columns for `BY LEVEL`: two leading spaces, the level left-aligned in 6, the
+count right-aligned in 3.
+
+Note that `LEVEL` is a value to read, not a string to write into the logic — the
+grader changes it, and it changes the level counts too. Note also that in the
+sample data the target level happens to be the last row of `BY LEVEL`. **That is
+a coincidence of first-appearance order, not a rule**, and the mutated dataset
+breaks it.
 
 ---
 
@@ -158,10 +171,30 @@ An email is the identity: two entries are the same person if their emails match
 first occurrence of each, in arrival order, numbered from 1 with the name left in
 20 followed by the normalised email.
 
-Report every duplicate with **the line number it appeared on**, counting from
-zero, the name as written on that line, and the email it collided with. A line
-with no angle brackets is malformed and reported the same way, with the reason
-`malformed`.
+### The `REJECTED` section — two kinds of failure, listed and counted separately
+
+A line can fail for two different reasons, and they are **not the same thing**.
+Duplicates are listed first, then malformed lines. Both carry **the line number
+they appeared on**, counting from zero.
+
+**A duplicate** — this email has already been seen. Give the name as written on
+*this* line, and the email it collided with:
+
+```
+  line 2: ada lovelace already signed up as ada@shop.co
+```
+
+**A malformed line** — no angle brackets, so no email can be extracted. It is
+not a signup and it is **not a duplicate**. Give the whole stripped entry and
+the reason:
+
+```
+  line 2: Alan Turing no-brackets-here — malformed
+```
+
+**They are counted separately in the closing line**, which reports four numbers:
+signups, unique, duplicate, malformed. A malformed line never increments the
+duplicate count.
 
 ```
 KEPT (4)
@@ -169,15 +202,15 @@ KEPT (4)
 2. Grace Hopper        grace@shop.co
 3. Alan Turing         alan@shop.co
 4. Katherine Johnson   katherine@shop.co
-DUPLICATES
+REJECTED
   line 2: ada lovelace already signed up as ada@shop.co
   line 4: Grace Hopper already signed up as grace@shop.co
 ----------------------------------------------
-6 signups   4 unique   2 duplicate
+6 signups   4 unique   2 duplicate   0 malformed
 ```
 
-The rule is 46 hyphens, and the duplicates section prints `  none` when there
-are none.
+The rule is 46 hyphens. `REJECTED` prints `  none` **only when there are
+neither duplicates nor malformed lines** — never alongside an entry.
 
 ---
 
@@ -263,6 +296,11 @@ WIDTHS
 
 The rule is 40 hyphens. The closing line reports lines, columns, and the total
 number of characters across all lines.
+
+**A "line" here is one joined string** — the header plus one per row, so four in
+this data. The character count is the sum of their lengths: **delimiters count**,
+because they are characters in the string, while the two-space indent added when
+printing does **not**, since it is presentation rather than data.
 
 ---
 

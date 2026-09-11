@@ -126,6 +126,44 @@ If a test fails and the code looks right, say so rather than reshaping the code
 to satisfy it. Contorting a correct solution to make a check pass teaches the
 wrong lesson twice over.
 
+## Rules for writing exercises
+
+Added 2026-09-06, after Chapter 5 Exercise 3 cost the learner most of an evening
+— not on the problem, but on reverse-engineering a defect in the specification
+and then absorbing three successive changes to it mid-solve.
+
+**1. Every distinct output line must appear as a worked example in the exercise
+text.** Not described — shown. "Reported the same way, with the reason
+`malformed`" told a reader that a line exists and nothing about what it says.
+If a format only exists inside the reference solution, it is not specified.
+
+**2. A section heading must be able to name everything it contains.** A section
+called `DUPLICATES` that must also hold malformed lines is broken before a word
+of prose is written, and the contradiction surfaces in the learner's output as
+`none` followed by an entry. Fix the design, not the wording.
+
+**3. Read every reference solution's output aloud, on the mutated data as well
+as the sample.** "Alan Turing no-brackets-here already signed up as malformed"
+is not a sentence. Executing it proved it ran; nobody read it.
+
+**4. Expected output must be derivable from the specification alone.** If
+passing requires inferring the reference implementation's internal structure,
+the specification is incomplete and the test is wrong to enforce it. A learner
+saying "the test contains details the question does not" is reporting a bug.
+
+**5. Never change an exercise the learner is currently solving without asking
+first.** Show the defect, lay out the options and their costs, let them choose.
+The correctness of the fix does not license the disruption — they have already
+built against the old text.
+
+**6. Push immediately after changing anything they work against.** Local commits
+on a branch with no upstream mean they are debugging against a file that has
+already moved, with no way to see it. That is worse than the original defect.
+
+**7. When the same exercise needs a third correction, stop editing and diagnose
+the design.** Successive small fixes to a specification are a signal that the
+structure underneath is wrong.
+
 ## The rule CI cannot enforce
 
 Attempt everything unaided first. No searching, no reference beyond the chapter
