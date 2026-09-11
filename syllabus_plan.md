@@ -194,6 +194,46 @@ Shape by stage, as a guide rather than a specification:
 - **After Ch.31** — the full instrument: packaged CLI, typed, tested, logged,
   configurable, concurrent where warranted, talking to something over HTTP.
 
+### Capstone candidate — a file-level deduplication tool
+
+Proposed 2026-09-11. Held as the leading candidate for the Chapter 31 capstone;
+not committed to, and not to be started before its chapters exist.
+
+**Scope: file-level, not block-level.** The enterprise description (chunk,
+hash each chunk, replace chunks with references) is ZFS/btrfs/VDO territory,
+requiring filesystem reflink support. The achievable and genuinely useful version
+finds files whose *entire contents* match and replaces duplicates with hardlinks,
+or simply reports them.
+
+**Why it earns its place.** The naive approach — hash every file — is unusably
+slow, and the correct approach is a funnel every real tool uses:
+
+1. group by **size** — free, eliminates almost everything
+2. compare the **first N bytes** — cheap, eliminates most of the remainder
+3. **full hash or byte comparison** — expensive, only for survivors
+
+That is complexity thinking deciding whether the tool works at all, not an
+academic exercise.
+
+**The correctness traps are the real content.** `rmlint` ships a page titled
+*"Cautions (or why it's hard to write a dupefinder)"*. In the wild, `fdupes` can
+delete files incorrectly when hardlinks are involved — hardlinked files share an
+inode, so they are *already* one copy, and "deduplicating" them frees nothing
+while potentially destroying the last path to the data. `rdfind` and `dupd` can
+be tricked similarly. A tool that deletes therefore needs: dry-run by default,
+explicit confirmation, inode-sharing detection, permission errors handled
+mid-walk, symlink loops refused, and files that change during the scan survived.
+
+**It maps onto eight remaining chapters** — dictionaries (6), files (12),
+generators (18), complexity (21), CLI (25), logging (26), packaging (27), and
+system work (30b) — which is what makes it a capstone rather than a side project.
+
+**Honest limitation:** the space is saturated (`fdupes`, `jdupes`, `rdfind`,
+`rmlint`, `dupd`), so forks and stars are unlikely. By the stated purpose of a
+take-home — testing integration, with portfolio value as a by-product — that
+does not matter. It came from a topic rather than from friction, which is
+correct for a capstone and would not be for a tool intended to find real users.
+
 ### The friction log — separate, and long-horizon
 
 Not a take-home. A running file, one dated line each time something in daily
